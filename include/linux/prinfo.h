@@ -1,4 +1,8 @@
-#include <linux/types.h>
+#ifndef PRINFO_H_
+#define PRINFO_H_
+
+#include <linux/types.h> /* pid_t */ 
+
 struct prinfo {
     long state;             /* current state of process */
     pid_t pid;              /* process id */
