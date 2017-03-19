@@ -12,3 +12,5 @@ struct prinfo {
     long uid;               /* user id of process owner */
     char comm[64];          /* name of program executed */
 };
+
+#endif
