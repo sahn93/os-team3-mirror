@@ -1,5 +1,6 @@
 #include "ptree.h"
 
+// convert_ts_prinfo(ts) : Returns the prinfo related to given task_struct 'ts'
 struct prinfo convert_ts_prinfo (struct task_struct *ts) {
 	struct prinfo new_pr;
 	struct task_struct *tmp_ts;
@@ -16,6 +17,8 @@ struct prinfo convert_ts_prinfo (struct task_struct *ts) {
 	else
 		new_pr.first_child_pid = 0;
 	
+	// If 'ts' is the last process of current sibling list,
+	// its next node will point back to its parent.
 	if (ts->sibling.next != &(ts->parent->children)) {
 		tmp_ts = list_entry(ts->sibling.next, struct task_struct, sibling);
 		new_pr.next_sibling_pid = tmp_ts->pid;
@@ -29,19 +32,28 @@ struct prinfo convert_ts_prinfo (struct task_struct *ts) {
 	return new_pr;
 }
 
+// ptree_dfs(root, buf, n_entry, nr) : Traverse the subtree of process tree.
+// root		: pointer to current subtree's root process
+// buf		: pointer to the kernel-side buffer
+// n_entry	: number of visited process
+// nr		: initial size of buffer
 void ptree_dfs(struct task_struct *root, struct prinfo *buf, int *n_entry, const int nr) {
 	struct task_struct *child;
 
+	// Ignore swapper process
 	if (root->pid != 0) {
+		// Do not store current prinfo if 'buf' is already full.
 		if (*n_entry < nr) 
 			buf[*n_entry] = convert_ts_prinfo(root);
 		(*n_entry)++;
 	}
 	
+	// recursive call for root's children
 	list_for_each_entry(child, &(root->children), sibling)
 		ptree_dfs(child, buf, n_entry, nr);
 }
 
+// sys_ptree(buf, nr) : Actual system call function for ptree
 asmlinkage int sys_ptree(struct prinfo *buf, int *nr) {
 	struct prinfo *kbuf;
 	int knr, num_entry = 0;
@@ -77,4 +89,3 @@ asmlinkage int sys_ptree(struct prinfo *buf, int *nr) {
 	kfree(kbuf);
     return num_entry;
 }
-
