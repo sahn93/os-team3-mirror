@@ -26,10 +26,13 @@ After `ptree_dfs` finishes, `ptree` copies the `prinfo` data stored in `buf` and
 ## Implementation
 `ptree.c` consists of 3 functions.
 - `struct prinfo convert_ts_prinfo (struct task_struct *ts)`
+
 Converts `task_struct` into `prinfo` struct.
 - `void ptree_dfs(struct task_struct *root, struct prinfo *buf, int *n_entry, const int nr)`
+
 Traverse the process tree by calling `ptree_dfs` recursively for a process's children. It does not store current prinfo if 'buf' is already full.
 - `asmlinkage int sys_ptree(struct prinfo *buf, int *nr)`
+
 Actual system call function for ptree. It validates the arguments first and traverse the process tree from the root(swapper) after allocates buffer in kernel memory. after traversal, copy the kernel buffer into the user buffer.
 
 ## How to build our kernel
