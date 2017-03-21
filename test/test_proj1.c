@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "../include/linux/prinfo.h"
 
-#define BUFFER_NUM 100 /* number of buffers */
+#define BUFFER_NUM 300 /* number of buffers */
 
 void print_prinfo(struct prinfo p) {
     printf("%s,%d,%ld,%d,%d,%d,%ld\n", p.comm, p.pid, p.state,
