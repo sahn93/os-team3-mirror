@@ -27,13 +27,13 @@ After `ptree_dfs` finishes, `ptree` copies the `prinfo` data stored in `buf` and
 `ptree.c` consists of 3 functions.
 - `struct prinfo convert_ts_prinfo (struct task_struct *ts)`
 
-Converts `task_struct` into `prinfo` struct.
+Converts `task_struct` into `prinfo` struct. Since `prinfo` is just a subset of `task_struct`, every variables in `prinfo` is identical with them in `task_struct`.
 - `void ptree_dfs(struct task_struct *root, struct prinfo *buf, int *n_entry, const int nr)`
 
-Traverse the process tree by calling `ptree_dfs` recursively for a process's children. It does not store current prinfo if 'buf' is already full.
+Traverse the process tree by calling `ptree_dfs` recursively for a process's children. It does not store `prinfo` of `swapper`, which is the root process and of processes that come after 'buf' is already full.
 - `asmlinkage int sys_ptree(struct prinfo *buf, int *nr)`
 
-Actual system call function for ptree. It validates the arguments first and traverse the process tree from the root(swapper) after allocates buffer in kernel memory. after traversal, copy the kernel buffer into the user buffer.
+Actual system call function for ptree. It validates the input arguments first and traverse the process tree from the root(swapper) after allocates buffer in kernel memory. after traversal, copy the kernel buffer into the user buffer. When it occurs an error, it returns an appropriate value for the kind of error.
 
 ## How to build our kernel
 1) type `build` on the root directory.
@@ -59,3 +59,4 @@ full result can be found on [here](https://github.com/swsnu/os-team3/blob/proj1/
 
 ## What we've learned
 In this very first project, we have learned some basic knowledge about linux kernel as well as how to use git in the real world. First of all, we have figured out the structure of `task_struct`, and the means to changing mode from the kernel mode to the user mode and vice versa. Also, we could understand why we have to make sure to lock task list before traversing along the process tree. Thanks to TAs, we have lessons with `ctags` and `cscope`, which were excessively helpful in this project. On the other hand, some of us used git for the first time, and it was a great time to learn how to use git in a team project.
+In addition, we learned the right way of using Git. We will review the pull request beforehand merging it from now on.
