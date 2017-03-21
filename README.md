@@ -28,7 +28,28 @@ After `ptree_dfs` finishes, `ptree` copies the `prinfo` data stored in `buf` and
 
 ### How to build our kernel
 
+1. Add `ptree.o` on the `obj-y` on `os-team3/kernel/Makefile`.
+2. type `build` on the root directory.
+3. type `flash` to upload kernel to the ARTIK.
+
 ### Investigation of the process tree
+
+1. compile `os-team3/test/test_proj1.c` by typing `arm-linux-gnueabi-gcc test_proj1.c -o test_proj1`.
+2. push test program to the ARTIK by typing `push test_proj1 /root/test_proj1`.
+3. execute test program by typing `/root/test_proj1` on artik console.
+
+#### Result (partial)
+    systemd,1,1,0,2152,2,0
+        systemd-journal,2152,0,1,0,2183,0
+        systemd-udevd,2183,1,1,0,3438,0
+        dlog_logger,3438,1,1,0,3472,1901
+        key-manager,3472,1,1,0,3499,444
+        murphyd,3499,1,1,0,3507,451
+        resourced,3507,1,1,0,3509,0
+        sdbd,3509,1,1,0,3532,0
+        device-policy-m,3532,1,1,0,3535,402
+        media-server,3535,1,1,0,3546,451
+full result can be found on [here](https://github.com/swsnu/os-team3/blob/proj1/test/test_proj1_result.txt).
 
 ### What we've learned
 
