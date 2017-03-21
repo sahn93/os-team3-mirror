@@ -1,6 +1,7 @@
-# Project 1 - Team 3
+Project 1 - Team 3
+==================
 
-### High-level design
+## High-level design
 
 Our `ptree` system call can be divided into three phases.
 
@@ -22,21 +23,26 @@ to `buf` in pre-order. When `ptree_dfs` returns, `ptree` unlocks tasklist.
 #### 3. Copy back to user space
 After `ptree_dfs` finishes, `ptree` copies the `prinfo` data stored in `buf` and new `nr` value to user space.
 
+## Implementation
+`ptree.c` consists of 3 functions.
+- `struct prinfo convert_ts_prinfo (struct task_struct *ts)`
 
+Converts `task_struct` into `prinfo` struct.
+- `void ptree_dfs(struct task_struct *root, struct prinfo *buf, int *n_entry, const int nr)`
 
-### Implementation
+Traverse the process tree by calling `ptree_dfs` recursively for a process's children. It does not store current prinfo if 'buf' is already full.
+- `asmlinkage int sys_ptree(struct prinfo *buf, int *nr)`
 
-### How to build our kernel
+Actual system call function for ptree. It validates the arguments first and traverse the process tree from the root(swapper) after allocates buffer in kernel memory. after traversal, copy the kernel buffer into the user buffer.
 
-1. Add `ptree.o` on the `obj-y` on `os-team3/kernel/Makefile`.
-2. type `build` on the root directory.
-3. type `flash` to upload kernel to the ARTIK.
+## How to build our kernel
+1) type `build` on the root directory.
+2) type `flash` to upload kernel to the ARTIK.
 
-### Investigation of the process tree
-
-1. compile `os-team3/test/test_proj1.c` by typing `arm-linux-gnueabi-gcc test_proj1.c -o test_proj1`.
-2. push test program to the ARTIK by typing `push test_proj1 /root/test_proj1`.
-3. execute test program by typing `/root/test_proj1` on artik console.
+## Investigation of the process tree
+1) compile `os-team3/test/test_proj1.c` by typing `arm-linux-gnueabi-gcc test_proj1.c -o test_proj1`.
+2) push test program to the ARTIK by typing `push test_proj1 /root/test_proj1`.
+3) execute test program by typing `/root/test_proj1` on artik console.
 
 #### Result (partial)
     systemd,1,1,0,2152,2,0
@@ -51,6 +57,5 @@ After `ptree_dfs` finishes, `ptree` copies the `prinfo` data stored in `buf` and
         media-server,3535,1,1,0,3546,451
 full result can be found on [here](https://github.com/swsnu/os-team3/blob/proj1/test/test_proj1_result.txt).
 
-### What we've learned
-
+## What we've learned
 In this very first project, we have learned some basic knowledge about linux kernel as well as how to use git in the real world. First of all, we have figured out the structure of `task_struct`, and the means to changing mode from the kernel mode to the user mode and vice versa. Also, we could understand why we have to make sure to lock task list before traversing along the process tree. Thanks to TAs, we have lessons with `ctags` and `cscope`, which were excessively helpful in this project. On the other hand, some of us used git for the first time, and it was a great time to learn how to use git in a team project.
