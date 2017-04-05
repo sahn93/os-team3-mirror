@@ -3,10 +3,11 @@
 #include <linux/rotation.h>
 #include <asm-generic/errno-base.h>
 
-
+int dev_degree = -1;
 
 asmlinkage int sys_set_rotation(int degree){
-	printk("Hello from set_rotation\n");
+	dev_degree = degree;
+	printk("[set_rotation syscall] device degree : %d\n", dev_degree);
 	return 0;
 }
 
