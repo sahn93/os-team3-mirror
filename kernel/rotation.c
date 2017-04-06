@@ -17,6 +17,21 @@ struct list_head *find_with_range(int degree, int range) {
 	return NULL;
 }
 
+void exit_rotlock(void) {
+	// TODO : 1. Release holding lock, 2. Remove waiting lock
+	return;
+}
+
+int range_overlap(int d1, int r1, int d2, int r2) {
+	// TODO : Return 1 if [d1-r1, d1+r1] and [d2-r2, d2+r2] overlap, otherwise return 0.
+	return 0;
+}
+
+int dev_deg_in_range(int degree, int range) {
+	// dev_degree = [dev_degree, dev_degree]
+	return range_overlap(degree, range, dev_degree, 0);
+}
+
 asmlinkage int sys_set_rotation(int degree){
 	/* 0 <= degree < 360 */
 	if (degree < 0 || degree >= 360)
