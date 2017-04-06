@@ -22,20 +22,20 @@ void exit_rotlock(void) {
 	return;
 }
 
-int range_overlap(int d1, int r1, int d2, int r2) {
+int range_overlap(struct rot_lock *r1, struct rot_lock *r2) {
 	// TODO : Return 1 if [d1-r1, d1+r1] and [d2-r2, d2+r2] overlap, otherwise return 0.
 	return 0;
 }
 
-int dev_deg_in_range(int degree, int range) {
+int dev_deg_in_range(struct rot_lock *r) {
 	// dev_degree = [dev_degree, dev_degree]
-	return range_overlap(degree, range, dev_degree, 0);
+	return 0;
 }
 
 asmlinkage int sys_set_rotation(int degree){
 	/* 0 <= degree < 360 */
 	if (degree < 0 || degree >= 360)
-		return -1;
+		return -EINVAL;
 
 	dev_degree = degree;
 	printk("[set_rotation syscall] device degree : %d\n", dev_degree);
@@ -49,7 +49,7 @@ asmlinkage int sys_set_rotation(int degree){
 asmlinkage int sys_rotlock_read(int degree, int range){	
 	// printk("Hello from rotlock_read\n");
 	if (!is_valid_input(degree, range))
-		return -1;
+		return -EINVAL;
 
 	return 0;
 }
@@ -57,7 +57,7 @@ asmlinkage int sys_rotlock_read(int degree, int range){
 asmlinkage int sys_rotlock_write(int degree, int range){
 	// printk("Hello from rotlock_write\n");
 	if (!is_valid_input(degree, range)) 
-		return -1;
+		return -EINVAL;
 
 	return 0;
 }
@@ -67,11 +67,11 @@ asmlinkage int sys_rotunlock_read(int degree, int range){
 	struct list_head *to_unlock;
 
 	if (!is_valid_input(degree, range)) 
-		return -1;
+		return -EINVAL;
 	
 	to_unlock = find_with_range(degree, range);
 	if (to_unlock == NULL)
-		return -1;
+		return -EINVAL;
 
 	return 0;
 }
@@ -81,11 +81,11 @@ asmlinkage int sys_rotunlock_write(int degree, int range){
 	struct list_head *to_unlock;
 
 	if (!is_valid_input(degree, range)) 
-		return -1;
+		return -EINVAL;
 
 	to_unlock = find_with_range(degree, range);
 	if (to_unlock == NULL)
-		return -1;
+		return -EINVAL;
 
 	return 0;
 }
