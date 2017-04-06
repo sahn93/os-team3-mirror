@@ -3,13 +3,16 @@
 #include <linux/rotation.h>
 #include <linux/list.h>
 #include <asm-generic/errno-base.h>
+#include <linux/spinlock.h>
 
 int dev_degree = -1;
+// Spinlock for everything in rotation.c
+spinlock_t my_lock = SPIN_LOCK_UNLOCKED;
 
 struct rot_lock {
     int degree;
     int range;
-    struct pid_t pid; // caller user process's pid.
+    pid_t pid; // caller user process's pid.
     int is_read; // 1 for read lock, 0 for write lock.
 }
 // list of rotation locks that acquired lock.
