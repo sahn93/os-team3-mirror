@@ -4,6 +4,7 @@
 #include <linux/list.h>
 #include <asm-generic/errno-base.h>
 #include <linux/spinlock.h>
+#include <linux/sched.h>
 
 int dev_degree = -1;
 // Spinlock for everything in rotation.c
@@ -46,7 +47,7 @@ struct rot_lock_acq *find_by_range(int degree, int range) {
     
     spin_lock(&g_lock);
 
-    list_for_each_entry(alock, &acq_lock->acq_locks, acq_locks) {
+    list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
        if (current->pid == alock->lock.pid
                && degree == alock->lock.degree
                && range == alock->lock.range) {
