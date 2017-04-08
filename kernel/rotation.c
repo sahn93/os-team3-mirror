@@ -10,23 +10,6 @@ int dev_degree = -1;
 // Spinlock for everything in rotation.c
 DEFINE_SPINLOCK(g_lock);
 
-struct rot_lock {
-    int degree;
-    int range;
-    pid_t pid; // caller user process's pid.
-    int is_read; // 1 for read lock, 0 for write lock.
-};
-// list of rotation locks that acquired lock.
-struct rot_lock_acq {
-    struct rot_lock lock;
-    struct list_head acq_locks;
-};
-// list of rotation locks pending.
-struct rot_lock_pend {
-    struct rot_lock lock;
-    struct list_head pend_locks;
-};
-
 struct rot_lock_acq acq_lock = {.acq_locks = LIST_HEAD_INIT(acq_lock.acq_locks)};
 struct rot_lock_pend pend_lock = {.pend_locks = LIST_HEAD_INIT(pend_lock.pend_locks)};
 
@@ -61,12 +44,41 @@ struct rot_lock_acq *find_by_range(int degree, int range) {
 }
 
 int read_lockable(struct rot_lock *r) {
-	return 0;
+    // 1. Check if a write lock is blocking the range. 
+    // 2. Check if more than a write lock is in pending list.
+    struct rot_lock_acq *alock;
+    struct rot_lock_pend *plock;
+
+    spin_lock(&g_lock);
+    list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
+        if (range_overlap(r, &(alock->lock))) {
+           spin_unlock(&g_lock);
+           return 0;
+        } 
+    }
+    list_for_each_entry(plock, &(plock->pend_locks), pend_locks) {
+        if (plock->lock.is_read == 0) {
+            spin_unlock(&g_lock);
+            return 0;
+        }
+    }
+    spin_unlock(&g_lock);
+	return 1;
 }
 
 // return 1 if a write lock is lockable.
 int write_lockable(struct rot_lock *r) {
-	return 0;
+    struct rot_lock_acq *alock;
+
+    spin_lock(&g_lock);
+    list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
+        if (range_overlap(r, &(alock->lock))) {
+            spin_unlock(&g_lock);
+            return 0;
+        }
+    }
+    spin_unlock(&g_lock);
+	return 1;
 }
 
 void exit_rotlock(void) {
