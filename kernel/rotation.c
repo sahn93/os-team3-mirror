@@ -36,8 +36,8 @@ int is_valid_input(int degree, int range) {
 	return 1;
 }
 
-struct list_head *find_by_range(int degree, int range) {
-	// TODO : If there is matching process with current pid and given degree range, return corresponding list_head
+struct rot_lock_acq *find_by_range(int degree, int range) {
+	// TODO : If there is matching process with current pid and given degree range, return corresponding rot_lock_acq
 	// Otherwise (no matching node), return NULL
 	return NULL;
 }
@@ -117,15 +117,23 @@ asmlinkage int sys_rotunlock_read(int degree, int range){
     // Then, remove this from the acqired locks list and let the locks in the pending
     // list to acquire their locks by calling lock_lockables(1).
 	
-    struct list_head *to_unlock;
+	struct rot_lock_acq *to_unlock;  
 
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 	
+	spin_lock(&g_lock);
 	to_unlock = find_by_range(degree, range);
-	if (to_unlock == NULL)
+	if (to_unlock == NULL || !to_unlock->lock.is_read) {
+		spin_unlock(&g_lock);
 		return -EINVAL;
+	}
 
+	list_del(&to_unlock->acq_locks);
+	kfree(to_unlock);
+	lock_lockables(1);
+	
+	spin_unlock(&g_lock);
 	return 0;
 }
 
@@ -134,14 +142,22 @@ asmlinkage int sys_rotunlock_write(int degree, int range){
     // Then, remove this from the acqired locks list and let the locks in the pending
     // list to acquire their locks by calling lock_lockables(0).
 	
-    struct list_head *to_unlock;
+    struct rot_lock_acq *to_unlock;
 
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 
+	spin_lock(&g_lock);
 	to_unlock = find_by_range(degree, range);
-	if (to_unlock == NULL)
+	if (to_unlock == NULL || to_unlock->lock.is_read) {
+		spin_unlock(&g_lock);
 		return -EINVAL;
+	}
 
+	list_del(&to_unlock->acq_locks);
+	kfree(to_unlock);
+	lock_lockables(0);
+
+	spin_unlock(&g_lock);
 	return 0;
 }
