@@ -7,28 +7,33 @@
 
 int dev_degree = -1;
 // Spinlock for everything in rotation.c
-spinlock_t my_lock = SPIN_LOCK_UNLOCKED;
+DEFINE_SPINLOCK(g_lock);
 
 struct rot_lock {
     int degree;
     int range;
     pid_t pid; // caller user process's pid.
     int is_read; // 1 for read lock, 0 for write lock.
-}
+};
 // list of rotation locks that acquired lock.
 struct rot_lock_acq {
     struct rot_lock lock;
     struct list_head acq_locks;
-}
+};
 // list of rotation locks pending.
 struct rot_lock_pend {
     struct rot_lock lock;
     struct list_head pend_locks;
-}
+};
 
 int is_valid_input(int degree, int range) {
 	// TODO : If input is valid, return 1. Otherwise, return 0.
-	return 0;
+	/* 0 <= degree < 360 , 0 < range < 180 */
+	if(degree < 0 || degree >= 360)
+		return 0;
+	if(range <= 0 || range >= 180)
+		return 0;	
+	return 1;
 }
 
 struct list_head *find_by_range(int degree, int range) {
@@ -45,12 +50,22 @@ void exit_rotlock(void) {
 
 int range_overlap(struct rot_lock *r1, struct rot_lock *r2) {
 	// TODO : Return 1 if two locks overlap, otherwise return 0.
+	int distance = r1->degree - r2->degree;
+	distance = (distance<0)?(-distance):distance;
+	distance = (distance < 180)?distance:(360 - distance);
+	if(distance <= r1->range + r2->range)
+		return 1;
 	return 0;
 }
 
 // dev: device degree
 int dev_deg_in_range(struct rot_lock *r) {
-    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;
+    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;	
+	int distance = dev_degree - r->degree;
+	distance = (distance<0)?(-distance):distance;
+	distance = (distance < 180)?distance:(360 - distance);
+	if(distance <= r->range)
+		return 1;
 	return 0;
 }
 
@@ -107,7 +122,7 @@ asmlinkage int sys_rotunlock_read(int degree, int range){
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 	
-	to_unlock = find_with_range(degree, range);
+	to_unlock = find_by_range(degree, range);
 	if (to_unlock == NULL)
 		return -EINVAL;
 
@@ -124,7 +139,7 @@ asmlinkage int sys_rotunlock_write(int degree, int range){
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 
-	to_unlock = find_with_range(degree, range);
+	to_unlock = find_by_range(degree, range);
 	if (to_unlock == NULL)
 		return -EINVAL;
 
