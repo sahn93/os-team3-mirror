@@ -42,6 +42,14 @@ struct rot_lock_acq *find_by_range(int degree, int range) {
 	return NULL;
 }
 
+int read_lockable(struct rot_lock *r) {
+	return 0;
+}
+
+int write_lockable(struct rot_lock *r) {
+	return 0;
+}
+
 void exit_rotlock(void) {
 	// TODO : 1. Acquire guard lock, 2. Remove elements in acquired list and pending list which has its pid, 
     // 3. If removed an element from acquired list, give lock for pending locks, 4. Release guard lock.
