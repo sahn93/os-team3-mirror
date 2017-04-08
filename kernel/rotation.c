@@ -7,32 +7,32 @@
 
 int dev_degree = -1;
 // Spinlock for everything in rotation.c
-spinlock_t my_lock = SPIN_LOCK_UNLOCKED;
+DEFINE_SPINLOCK(g_lock);
 
 struct rot_lock {
     int degree;
     int range;
     pid_t pid; // caller user process's pid.
     int is_read; // 1 for read lock, 0 for write lock.
-}
+};
 // list of rotation locks that acquired lock.
 struct rot_lock_acq {
     struct rot_lock lock;
     struct list_head acq_locks;
-}
+};
 // list of rotation locks pending.
 struct rot_lock_pend {
     struct rot_lock lock;
     struct list_head pend_locks;
-}
+};
 
 int is_valid_input(int degree, int range) {
 	// TODO : If input is valid, return 1. Otherwise, return 0.
 	return 0;
 }
 
-struct list_head *find_by_range(int degree, int range) {
-	// TODO : If there is matching process with current pid and given degree range, return corresponding list_head
+struct rot_lock_acq *find_by_range(int degree, int range) {
+	// TODO : If there is matching process with current pid and given degree range, return corresponding rot_lock_acq
 	// Otherwise (no matching node), return NULL
 	return NULL;
 }
@@ -102,15 +102,23 @@ asmlinkage int sys_rotunlock_read(int degree, int range){
     // Then, remove this from the acqired locks list and let the locks in the pending
     // list to acquire their locks by calling lock_lockables(1).
 	
-    struct list_head *to_unlock;
+	struct rot_lock_acq *to_unlock;  
 
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 	
-	to_unlock = find_with_range(degree, range);
-	if (to_unlock == NULL)
+	spin_lock(&g_lock);
+	to_unlock = find_by_range(degree, range);
+	if (to_unlock == NULL || !to_unlock->lock.is_read) {
+		spin_unlock(&g_lock);
 		return -EINVAL;
+	}
 
+	list_del(&to_unlock->acq_locks);
+	kfree(to_unlock);
+	lock_lockables(1);
+	
+	spin_unlock(&g_lock);
 	return 0;
 }
 
@@ -119,14 +127,22 @@ asmlinkage int sys_rotunlock_write(int degree, int range){
     // Then, remove this from the acqired locks list and let the locks in the pending
     // list to acquire their locks by calling lock_lockables(0).
 	
-    struct list_head *to_unlock;
+    struct rot_lock_acq *to_unlock;
 
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 
-	to_unlock = find_with_range(degree, range);
-	if (to_unlock == NULL)
+	spin_lock(&g_lock);
+	to_unlock = find_by_range(degree, range);
+	if (to_unlock == NULL || to_unlock->lock.is_read) {
+		spin_unlock(&g_lock);
 		return -EINVAL;
+	}
 
+	list_del(&to_unlock->acq_locks);
+	kfree(to_unlock);
+	lock_lockables(0);
+
+	spin_unlock(&g_lock);
 	return 0;
 }
