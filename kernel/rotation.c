@@ -46,10 +46,10 @@ struct rot_lock_acq *find_by_range(int degree, int range) {
     
     spin_lock(&g_lock);
 
-    list_for_each_entry(alock, acq_list, acq_locks) {
-       if (current->pid == &alock->lock->pid
-               && degree == &alock->lock->degree
-               && range == &alock->lock->range) {
+    list_for_each_entry(alock, &acq_lock->acq_locks, acq_locks) {
+       if (current->pid == alock->lock.pid
+               && degree == alock->lock.degree
+               && range == alock->lock.range) {
            spin_unlock(&g_lock);
            return alock;
        }
@@ -63,6 +63,7 @@ int read_lockable(struct rot_lock *r) {
 	return 0;
 }
 
+// return 1 if a write lock is lockable.
 int write_lockable(struct rot_lock *r) {
 	return 0;
 }
