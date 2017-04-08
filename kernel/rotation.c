@@ -7,33 +7,51 @@
 
 int dev_degree = -1;
 // Spinlock for everything in rotation.c
-spinlock_t my_lock = SPIN_LOCK_UNLOCKED;
+DEFINE_SPINLOCK(g_lock);
 
 struct rot_lock {
     int degree;
     int range;
     pid_t pid; // caller user process's pid.
     int is_read; // 1 for read lock, 0 for write lock.
-}
+};
 // list of rotation locks that acquired lock.
 struct rot_lock_acq {
     struct rot_lock lock;
     struct list_head acq_locks;
-}
+};
 // list of rotation locks pending.
 struct rot_lock_pend {
     struct rot_lock lock;
     struct list_head pend_locks;
-}
+};
+
+struct rot_lock_acq acq_lock = {.acq_locks = LIST_HEAD_INIT(acq_lock.acq_locks)};
+struct rot_lock_pend pend_lock = {.pend_locks = LIST_HEAD_INIT(pend_lock.pend_locks)};
 
 int is_valid_input(int degree, int range) {
 	// TODO : If input is valid, return 1. Otherwise, return 0.
 	return 0;
 }
 
-struct list_head *find_by_range(int degree, int range) {
-	// TODO : If there is matching process with current pid and given degree range, return corresponding list_head
-	// Otherwise (no matching node), return NULL
+struct rot_lock_acq *find_by_range(int degree, int range) {
+	// TODO : If there is matching process with current pid and given degree range in running list,
+    // return corresponding list_head. Otherwise (no matching node), return NULL.
+    struct rot_lock_acq *alock;
+    pid_t current_pid;
+
+    spin_lock(&g_lock);
+
+    list_for_each_entry(alock, acq_list, acq_locks) {
+       if (current->pid == &alock->lock->pid
+               && degree == &alock->lock->degree
+               && range == &alock->lock->range) {
+           spin_unlock(&g_lock);
+           return alock;
+       }
+    } 
+
+    spin_unlock(&g_lock);
 	return NULL;
 }
 
