@@ -161,13 +161,13 @@ asmlinkage int sys_set_rotation(int degree){
    0 <= degree < 360, 0 < range < 180
    degree - range <= LOCK RANGE <= degree + range */
 
-asmlinkage int sys_rotlock_read(int degree, int range){	
-    // TODO : First, make a rot_lock struct. Then, put into the rot_lock_acq if available.
-    // Else, put into the rot_lock_pend.
-    
+// First, make a rot_lock struct. Then, put into the rot_lock_acq if available.
+// Else, put into the rot_lock_pend and sleep.
+int _rotlock(int degree, int range, int is_read) {
 	struct rot_lock curr_rot_lock;
 	struct rot_lock_acq *curr_acq;
 	struct rot_lock_pend *curr_pend;
+	int (*is_lockable)(struct rot_lock *) = (is_read ? read_lockable : write_lockable);
 
 	if (!is_valid_input(degree, range))
 		return -EINVAL;
@@ -176,42 +176,49 @@ asmlinkage int sys_rotlock_read(int degree, int range){
 	curr_rot_lock.degree = degree;
 	curr_rot_lock.range = range;
 	curr_rot_lock.pid = current->pid;
-	curr_rot_lock.is_read = 1;
+	curr_rot_lock.is_read = is_read;
 	
-	if (!read_lockable(&curr_rot_lock)) {
+	if (is_lockable(&curr_rot_lock)) {
+		curr_acq = (struct rot_lock_acq *)kmalloc(sizeof(struct rot_lock_acq), GFP_KERNEL);
+		if (curr_acq == NULL) {
+			spin_unlock(&g_lock);
+			return -ENOMEM;
+		}
+		curr_acq->lock = curr_rot_lock;
+		list_add_tail(&curr_acq->acq_locks, &acq_lock.acq_locks);
+		spin_unlock(&g_lock);
+	}
+	else {
 		set_current_state(TASK_INTERRUPTIBLE);
 	
-		curr_pend = (struct rot_lock_pend *)kmalloc(sizeof(struct rot_lock_pend));
-		curr_pend.lock = curr_rot_lock;
-		list_add(&curr_pend.pend_locks, &pend_lock.pend_locks);
+		curr_pend = (struct rot_lock_pend *)kmalloc(sizeof(struct rot_lock_pend), GFP_KERNEL);
+		if (curr_pend == NULL) {
+			spin_unlock(&g_lock);
+			return -ENOMEM;
+		}
+		curr_pend->lock = curr_rot_lock;
+		list_add_tail(&curr_pend->pend_locks, &pend_lock.pend_locks);
 
-		spin_unlock(&g_unlock);
+		spin_unlock(&g_lock);
 		schedule();
-		// Start from here when it receives signal from lock_lockables
-		// lock_lockables doesn't unlock g_lock, so it automatically grabs a lock
-	}
 
-	curr_acq = (struct rot_lock_acq *)kmalloc(sizeof(struct rot_lock_acq));
-	curr_acq.lock = curr_rot_lock;
-	list_add(&curr_acq.acq_locks, &acq_lock.acq_locks);
-	spin_unlock(&g_lock);
+		// lock_lockables will move this process from pending queue to acquired queue
+	}
 	return 0;
+}
+
+asmlinkage int sys_rotlock_read(int degree, int range){
+    return _rotlock(degree, range, 1);
 }
 
 asmlinkage int sys_rotlock_write(int degree, int range){
-    // TODO : First, make a rot_lock struct. Then, put into the rot_lock_acq if available.
-    // Else, put into the rot_lock_pend.
-    
-	if (!is_valid_input(degree, range)) 
-		return -EINVAL;
-
-	return 0;
+	return _rotlock(degree, range, 0);
 }
 
-asmlinkage int sys_rotunlock_read(int degree, int range){
-    // TODO : First, find the rot_lock_acq struct by calling find_by_range function.
+int _rotunlock(int degree, int range, int is_read) {
+    // First, find the rot_lock_acq struct by calling find_by_range function.
     // Then, remove this from the acqired locks list and let the locks in the pending
-    // list to acquire their locks by calling lock_lockables(1).
+    // list to acquire their locks by calling lock_lockables.
 	
 	struct rot_lock_acq *to_unlock;  
 
@@ -220,40 +227,23 @@ asmlinkage int sys_rotunlock_read(int degree, int range){
 	
 	spin_lock(&g_lock);
 	to_unlock = find_by_range(degree, range);
-	if (to_unlock == NULL || !to_unlock->lock.is_read) {
+	if (to_unlock == NULL || to_unlock->lock.is_read != is_read) {
 		spin_unlock(&g_lock);
 		return -EINVAL;
 	}
 
 	list_del(&to_unlock->acq_locks);
 	kfree(to_unlock);
-	lock_lockables(1);
+	lock_lockables(is_read);
 	
 	spin_unlock(&g_lock);
 	return 0;
 }
 
+asmlinkage int sys_rotunlock_read(int degree, int range){
+	return _rotunlock(degree, range, 1);
+}
+
 asmlinkage int sys_rotunlock_write(int degree, int range){
-    // TODO : First, find the rot_lock_acq struct by calling find_by_range function.
-    // Then, remove this from the acqired locks list and let the locks in the pending
-    // list to acquire their locks by calling lock_lockables(0).
-	
-    struct rot_lock_acq *to_unlock;
-
-	if (!is_valid_input(degree, range)) 
-		return -EINVAL;
-
-	spin_lock(&g_lock);
-	to_unlock = find_by_range(degree, range);
-	if (to_unlock == NULL || to_unlock->lock.is_read) {
-		spin_unlock(&g_lock);
-		return -EINVAL;
-	}
-
-	list_del(&to_unlock->acq_locks);
-	kfree(to_unlock);
-	lock_lockables(0);
-
-	spin_unlock(&g_lock);
-	return 0;
+	return _rotunlock(degree, range, 0);
 }
