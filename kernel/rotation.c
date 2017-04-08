@@ -51,19 +51,22 @@ int read_lockable(struct rot_lock *r) {
 
     spin_lock(&g_lock);
     list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
-        if (range_overlap(r, &(alock->lock))) {
+        if (range_overlap(r, &(alock->lock))
+                && alock->lock.is_read == 0) {
            spin_unlock(&g_lock);
            return 0;
         } 
     }
-    list_for_each_entry(plock, &(plock->pend_locks), pend_locks) {
-        if (plock->lock.is_read == 0) {
+    list_for_each_entry(plock, &(pend_lock.pend_locks), pend_locks) {
+        if (range_overlap(r, &(plock->lock))
+                && dev_degree_in_range(&(plock->lock))
+                && plock->lock.is_read == 0) {
             spin_unlock(&g_lock);
             return 0;
         }
     }
     spin_unlock(&g_lock);
-	return 1;
+    return 1;
 }
 
 // return 1 if a write lock is lockable.
