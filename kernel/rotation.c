@@ -7,7 +7,7 @@
 
 int dev_degree = -1;
 // Spinlock for everything in rotation.c
-spinlock_t my_lock = SPIN_LOCK_UNLOCKED;
+spinlock_t g_lock = SPIN_LOCK_UNLOCKED;
 
 struct rot_lock {
     int degree;
@@ -28,7 +28,12 @@ struct rot_lock_pend {
 
 int is_valid_input(int degree, int range) {
 	// TODO : If input is valid, return 1. Otherwise, return 0.
-	return 0;
+	/* 0 <= degree < 360 , 0 < range < 180 */
+	if(degree < 0 || degree >= 360)
+		return 0;
+	if(range <= 0 || range >= 180)
+		return 0;	
+	return 1;
 }
 
 struct list_head *find_by_range(int degree, int range) {
