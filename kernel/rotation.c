@@ -28,7 +28,12 @@ struct rot_lock_pend {
 
 int is_valid_input(int degree, int range) {
 	// TODO : If input is valid, return 1. Otherwise, return 0.
-	return 0;
+	/* 0 <= degree < 360 , 0 < range < 180 */
+	if(degree < 0 || degree >= 360)
+		return 0;
+	if(range <= 0 || range >= 180)
+		return 0;	
+	return 1;
 }
 
 struct rot_lock_acq *find_by_range(int degree, int range) {
@@ -45,12 +50,22 @@ void exit_rotlock(void) {
 
 int range_overlap(struct rot_lock *r1, struct rot_lock *r2) {
 	// TODO : Return 1 if two locks overlap, otherwise return 0.
+	int distance = r1->degree - r2->degree;
+	distance = (distance<0)?(-distance):distance;
+	distance = (distance < 180)?distance:(360 - distance);
+	if(distance <= r1->range + r2->range)
+		return 1;
 	return 0;
 }
 
 // dev: device degree
 int dev_deg_in_range(struct rot_lock *r) {
-    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;
+    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;	
+	int distance = dev_degree - r->degree;
+	distance = (distance<0)?(-distance):distance;
+	distance = (distance < 180)?distance:(360 - distance);
+	if(distance <= r->range)
+		return 1;
 	return 0;
 }
 
