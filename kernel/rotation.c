@@ -4,6 +4,7 @@
 #include <linux/list.h>
 #include <asm-generic/errno-base.h>
 #include <linux/spinlock.h>
+#include <linux/sched.h>
 
 int dev_degree = -1;
 // Spinlock for everything in rotation.c
@@ -26,6 +27,9 @@ struct rot_lock_pend {
     struct list_head pend_locks;
 };
 
+struct rot_lock_acq acq_lock = {.acq_locks = LIST_HEAD_INIT(acq_lock.acq_locks)};
+struct rot_lock_pend pend_lock = {.pend_locks = LIST_HEAD_INIT(pend_lock.pend_locks)};
+
 int is_valid_input(int degree, int range) {
 	// TODO : If input is valid, return 1. Otherwise, return 0.
 	/* 0 <= degree < 360 , 0 < range < 180 */
@@ -37,8 +41,22 @@ int is_valid_input(int degree, int range) {
 }
 
 struct rot_lock_acq *find_by_range(int degree, int range) {
-	// TODO : If there is matching process with current pid and given degree range, return corresponding rot_lock_acq
-	// Otherwise (no matching node), return NULL
+	// TODO : If there is matching process with current pid and given degree range in running list,
+    // return corresponding list_head. Otherwise (no matching node), return NULL.
+    struct rot_lock_acq *alock;
+    
+    spin_lock(&g_lock);
+
+    list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
+       if (current->pid == alock->lock.pid
+               && degree == alock->lock.degree
+               && range == alock->lock.range) {
+           spin_unlock(&g_lock);
+           return alock;
+       }
+    } 
+
+    spin_unlock(&g_lock);
 	return NULL;
 }
 
@@ -46,6 +64,7 @@ int read_lockable(struct rot_lock *r) {
 	return 0;
 }
 
+// return 1 if a write lock is lockable.
 int write_lockable(struct rot_lock *r) {
 	return 0;
 }
