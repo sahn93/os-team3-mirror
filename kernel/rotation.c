@@ -50,12 +50,18 @@ void exit_rotlock(void) {
 
 int range_overlap(struct rot_lock *r1, struct rot_lock *r2) {
 	// TODO : Return 1 if two locks overlap, otherwise return 0.
+
 	return 0;
 }
 
 // dev: device degree
 int dev_deg_in_range(struct rot_lock *r) {
-    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;
+    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;	
+	int distance = dev_degree - r->degree;
+	distance = (distance<0)?(-distance):distance;
+	distance = (distance < 180)?distance:(360 - distance);
+	if(distance <= r->range)
+		return 1;
 	return 0;
 }
 
