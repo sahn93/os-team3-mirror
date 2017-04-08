@@ -43,8 +43,7 @@ struct rot_lock_acq *find_by_range(int degree, int range) {
 	// TODO : If there is matching process with current pid and given degree range in running list,
     // return corresponding list_head. Otherwise (no matching node), return NULL.
     struct rot_lock_acq *alock;
-    pid_t current_pid;
-
+    
     spin_lock(&g_lock);
 
     list_for_each_entry(alock, acq_list, acq_locks) {
