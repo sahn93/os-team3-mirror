@@ -165,9 +165,36 @@ asmlinkage int sys_rotlock_read(int degree, int range){
     // TODO : First, make a rot_lock struct. Then, put into the rot_lock_acq if available.
     // Else, put into the rot_lock_pend.
     
+	struct rot_lock curr_rot_lock;
+	struct rot_lock_acq *curr_acq;
+	struct rot_lock_pend *curr_pend;
+
 	if (!is_valid_input(degree, range))
 		return -EINVAL;
 
+	spin_lock(&g_lock);
+	curr_rot_lock.degree = degree;
+	curr_rot_lock.range = range;
+	curr_rot_lock.pid = current->pid;
+	curr_rot_lock.is_read = 1;
+	
+	if (!read_lockable(&curr_rot_lock)) {
+		set_current_state(TASK_INTERRUPTIBLE);
+	
+		curr_pend = (struct rot_lock_pend *)kmalloc(sizeof(struct rot_lock_pend));
+		curr_pend.lock = curr_rot_lock;
+		list_add(&curr_pend.pend_locks, &pend_lock.pend_locks);
+
+		spin_unlock(&g_unlock);
+		schedule();
+		// Start from here when it receives signal from lock_lockables
+		// lock_lockables doesn't unlock g_lock, so it automatically grabs a lock
+	}
+
+	curr_acq = (struct rot_lock_acq *)kmalloc(sizeof(struct rot_lock_acq));
+	curr_acq.lock = curr_rot_lock;
+	list_add(&curr_acq.acq_locks, &acq_lock.acq_locks);
+	spin_unlock(&g_lock);
 	return 0;
 }
 
