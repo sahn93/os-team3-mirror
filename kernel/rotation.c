@@ -31,7 +31,12 @@ struct rot_lock_pend pend_lock = {.pend_locks = LIST_HEAD_INIT(pend_lock.pend_lo
 
 int is_valid_input(int degree, int range) {
 	// TODO : If input is valid, return 1. Otherwise, return 0.
-	return 0;
+	/* 0 <= degree < 360 , 0 < range < 180 */
+	if(degree < 0 || degree >= 360)
+		return 0;
+	if(range <= 0 || range >= 180)
+		return 0;	
+	return 1;
 }
 
 struct rot_lock_acq *find_by_range(int degree, int range) {
@@ -63,12 +68,22 @@ void exit_rotlock(void) {
 
 int range_overlap(struct rot_lock *r1, struct rot_lock *r2) {
 	// TODO : Return 1 if two locks overlap, otherwise return 0.
+	int distance = r1->degree - r2->degree;
+	distance = (distance<0)?(-distance):distance;
+	distance = (distance < 180)?distance:(360 - distance);
+	if(distance <= r1->range + r2->range)
+		return 1;
 	return 0;
 }
 
 // dev: device degree
 int dev_deg_in_range(struct rot_lock *r) {
-    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;
+    // TODO : Return 1 if rot_lock's range contains device's degree, else 0;	
+	int distance = dev_degree - r->degree;
+	distance = (distance<0)?(-distance):distance;
+	distance = (distance < 180)?distance:(360 - distance);
+	if(distance <= r->range)
+		return 1;
 	return 0;
 }
 
@@ -120,15 +135,23 @@ asmlinkage int sys_rotunlock_read(int degree, int range){
     // Then, remove this from the acqired locks list and let the locks in the pending
     // list to acquire their locks by calling lock_lockables(1).
 	
-    struct list_head *to_unlock;
+	struct rot_lock_acq *to_unlock;  
 
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 	
-	to_unlock = find_with_range(degree, range);
-	if (to_unlock == NULL)
+	spin_lock(&g_lock);
+	to_unlock = find_by_range(degree, range);
+	if (to_unlock == NULL || !to_unlock->lock.is_read) {
+		spin_unlock(&g_lock);
 		return -EINVAL;
+	}
 
+	list_del(&to_unlock->acq_locks);
+	kfree(to_unlock);
+	lock_lockables(1);
+	
+	spin_unlock(&g_lock);
 	return 0;
 }
 
@@ -137,14 +160,22 @@ asmlinkage int sys_rotunlock_write(int degree, int range){
     // Then, remove this from the acqired locks list and let the locks in the pending
     // list to acquire their locks by calling lock_lockables(0).
 	
-    struct list_head *to_unlock;
+    struct rot_lock_acq *to_unlock;
 
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
 
-	to_unlock = find_with_range(degree, range);
-	if (to_unlock == NULL)
+	spin_lock(&g_lock);
+	to_unlock = find_by_range(degree, range);
+	if (to_unlock == NULL || to_unlock->lock.is_read) {
+		spin_unlock(&g_lock);
 		return -EINVAL;
+	}
 
+	list_del(&to_unlock->acq_locks);
+	kfree(to_unlock);
+	lock_lockables(0);
+
+	spin_unlock(&g_lock);
 	return 0;
 }
