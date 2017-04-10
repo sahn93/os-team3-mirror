@@ -59,7 +59,7 @@ int read_lockable(struct rot_lock *r) {
     }
     list_for_each_entry(plock, &(pend_lock.pend_locks), pend_locks) {
         if (range_overlap(r, &(plock->lock))
-                && dev_degree_in_range(&(plock->lock))
+                && dev_deg_in_range(&(plock->lock))
                 && plock->lock.is_read == 0) {
             spin_unlock(&g_lock);
             return 0;
@@ -72,7 +72,6 @@ int read_lockable(struct rot_lock *r) {
 // return 1 if a write lock is lockable.
 int write_lockable(struct rot_lock *r) {
     struct rot_lock_acq *alock;
-
     spin_lock(&g_lock);
     list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
         if (range_overlap(r, &(alock->lock))) {
@@ -86,7 +85,35 @@ int write_lockable(struct rot_lock *r) {
 
 void exit_rotlock(void) {
 	// TODO : 1. Acquire guard lock, 2. Remove elements in acquired list and pending list which has its pid, 
-    // 3. If removed an element from acquired list, give lock for pending locks, 4. Release guard lock.
+	// 3. If removed an element from acquired list, give lock for pending locks, 4. Release guard lock.
+
+	spin_lock(&g_lock);
+
+	struct rot_lock_acq *alock;
+	struct rot_lock_pend *plock;
+
+	list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks){
+		if(current->pid == alock->lock.pid){
+			int alock_is_read = alock->lock.is_read;
+			list_del(&alock->acq_locks);
+			kfree(alock);
+			lock_lockables(alock_is_read);			
+			spin_unlock(&g_lock);
+			return;
+		}
+	}
+
+	list_for_each_entry(plock, &(pend_lock.pend_locks), pend_locks){
+		if(current->pid == plock->lock.pid){
+			int plock_is_read = plock->lock.is_read;
+			list_del(&plock->pend_locks);
+			kfree(plock);
+			lock_lockables(plock_is_read);
+			spin_unlock(&g_lock);
+			return;
+		}
+	}
+	spin_unlock(&g_lock);
 	return;
 }
 
