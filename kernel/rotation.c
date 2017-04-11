@@ -87,10 +87,10 @@ void exit_rotlock(void) {
 	// TODO : 1. Acquire guard lock, 2. Remove elements in acquired list and pending list which has its pid, 
 	// 3. If removed an element from acquired list, give lock for pending locks, 4. Release guard lock.
 
-	spin_lock(&g_lock);
-
 	struct rot_lock_acq *alock;
 	struct rot_lock_pend *plock;
+
+	spin_lock(&g_lock);
 
 	list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks){
 		if(current->pid == alock->lock.pid){
@@ -141,7 +141,64 @@ int dev_deg_in_range(struct rot_lock *r) {
 int lock_lockables(int caller_is_readlock) {
     // TODO : lock pending locks that are available. If caller is a readlock, lock the first write lock.
     // else (caller is a writelock or set_rotation), FIFO.
-    return 0;
+    
+    struct rot_lock_pend *plock;
+    int ignore_writelock = 0;
+    int count=0;
+    struct rot_lock_acq *alock;
+
+    spin_lock(&g_lock);
+
+    if (caller_is_readlock) {
+        list_for_each_entry(plock, &(pend_lock.pend_locks), pend_locks) {
+           if (plock->lock.is_read==0
+                   && write_lockable(&(plock->lock))) {
+               // lock the first write lock in the pending list.
+               // make an alock element and put it into the acq_lock list.
+               alock = kmalloc(sizeof(*alock), GFP_KERNEL);
+               alock->lock = plock->lock;
+               // Then, free this plock.
+               list_add(&(alock->acq_locks), &acq_lock.acq_locks);
+               kfree(plock);
+               count++;
+               break;
+           }
+        }
+    } else {
+        // FIFO
+        list_for_each_entry(plock, &(pend_lock.pend_locks), pend_locks) {
+            if (plock->lock.is_read==0
+                    && ignore_writelock==0
+                    && write_lockable(&(plock->lock))) {
+                // lock the write lock if it is the first lockable lock in pending list.
+                // make an alock element and put it into the acq_lock list.
+                alock = kmalloc(sizeof(*alock), GFP_KERNEL);
+                alock->lock = plock->lock;
+                list_add(&(alock->acq_locks), &acq_lock.acq_locks);
+                // Then, free this plock.
+                kfree(plock);
+                count++;
+                // In this case, no more pending one acquires a lock.
+                break;
+            } else if (read_lockable(&(plock->lock))) {
+                // If the first lockable lock is a read lock, lock every lockable read locks.
+                // Since write lock can't acqure a lock, make a flag.
+                ignore_writelock=1;
+                // make an alock element and put it into the acq_lock list.
+                alock = kmalloc(sizeof(*alock), GFP_KERNEL);
+                alock->lock = plock->lock;
+                list_add(&(alock->acq_locks), &acq_lock.acq_locks);
+                // Then, free this plock.
+                kfree(plock);
+                count++;
+                // Iterate.
+            }
+        }
+    }
+
+    spin_unlock(&g_lock);
+    // return # of locks that acqured a lock.
+    return count;
 }
 
 asmlinkage int sys_set_rotation(int degree){
