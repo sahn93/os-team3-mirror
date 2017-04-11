@@ -150,11 +150,13 @@ asmlinkage int sys_set_rotation(int degree){
 
 	/* 0 <= degree < 360 */
 	if (degree < 0 || degree >= 360)
-		return -EINVAL;
+		return -EINVAL;	
 
+	spin_lock(&g_lock);
 	dev_degree = degree;
-	printk("[set_rotation syscall] device degree : %d\n", dev_degree);
-	return 0;
+	int num = lock_lockables(0);
+	spin_unlock(&g_lock);
+	return num;
 }
 
 /* For 4 system calls below, 
