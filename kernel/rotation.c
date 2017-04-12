@@ -153,7 +153,7 @@ int lock_lockables(int caller_is_readlock) {
                    && write_lockable(&(plock->lock))) {
                // lock the first write lock in the pending list.
                // make an alock element and put it into the acq_lock list.
-               alock = kmalloc(sizeof(*alock), GFP_KERNEL);
+               alock = (struct rot_lock_acq *) kmalloc(sizeof(*alock), GFP_KERNEL);
                if (alock == NULL) {
                    spin_unlock(&g_lock);
                    return -ENOMEM;
@@ -175,7 +175,7 @@ int lock_lockables(int caller_is_readlock) {
                     && write_lockable(&(plock->lock))) {
                 // lock the write lock if it is the first lockable lock in pending list.
                 // make an alock element and put it into the acq_lock list.
-                alock = kmalloc(sizeof(*alock), GFP_KERNEL);
+                alock = (struct rot_lock_acq *) kmalloc(sizeof(*alock), GFP_KERNEL);
                 if (alock == NULL) {
                    spin_unlock(&g_lock);
                    return -ENOMEM;
@@ -193,7 +193,7 @@ int lock_lockables(int caller_is_readlock) {
                 // Since write lock can't acqure a lock, make a flag.
                 ignore_writelock=1;
                 // make an alock element and put it into the acq_lock list.
-                alock = kmalloc(sizeof(*alock), GFP_KERNEL);
+                alock = (struct rot_lock_acq *) kmalloc(sizeof(*alock), GFP_KERNEL);
                 if (alock == NULL) {
                    spin_unlock(&g_lock);
                    return -ENOMEM;
