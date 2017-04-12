@@ -161,6 +161,7 @@ int lock_lockables(int caller_is_readlock) {
                alock->lock = plock->lock;
                // Then, free this plock.
                list_add_tail(&(alock->acq_locks), &acq_lock.acq_locks);
+               wake_up_process(find_task_by_vpid(alock->lock.pid));
                list_del(&plock->pend_locks);
                kfree(plock);
                count++;
@@ -182,6 +183,7 @@ int lock_lockables(int caller_is_readlock) {
                 }
                 alock->lock = plock->lock;
                 list_add_tail(&(alock->acq_locks), &acq_lock.acq_locks);
+                wake_up_process(find_task_by_vpid(alock->lock.pid));
                 // Then, free this plock.
                 list_del(&plock->pend_locks);
                 kfree(plock);
@@ -200,6 +202,7 @@ int lock_lockables(int caller_is_readlock) {
                 }
                 alock->lock = plock->lock;
                 list_add_tail(&(alock->acq_locks), &acq_lock.acq_locks);
+                wake_up_process(find_task_by_vpid(alock->lock.pid));
                 // Then, free this plock.
                 list_del(&plock->pend_locks);
                 kfree(plock);
