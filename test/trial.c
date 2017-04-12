@@ -30,11 +30,16 @@ int main(int argc, int **argv){
 			printf("Exception: null file pointer.\n");
 			syscall(383, 90, 90);
 			continue;
-		}
-		
+		}		
 		fgets(str, 1024, fp);
 		num = atoi(str);
 		printf("trial-%d: %d = ", id, num);
+		if(num == 1){
+			printf("1\n");
+			fclose(fp);
+			syscall(383, 90, 90);
+			continue;
+		}
 		while(is_prime(num)!=1){
 			for(i=2;i*i<=num;i++){
 				if(num%i==0 && is_prime(i)==1){
@@ -44,8 +49,7 @@ int main(int argc, int **argv){
 				}
 			}
 		}
-		if(is_prime(num)==1)
-			printf("%d\n", num);
+		printf("%d\n", num);
 		fclose(fp);
 		/* release lock */
 		syscall(383, 90, 90);
