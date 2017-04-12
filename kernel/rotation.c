@@ -148,13 +148,15 @@ asmlinkage int sys_set_rotation(int degree){
     // TODO : Set the current rotation as the input degree and let the pending locks
     // acquire their lock by calling lock_lockables(0).
 
-	/* 0 <= degree < 360 */
+	int num;
 	if (degree < 0 || degree >= 360)
-		return -EINVAL;
+		return -EINVAL;	
 
+	spin_lock(&g_lock);
 	dev_degree = degree;
-	printk("[set_rotation syscall] device degree : %d\n", dev_degree);
-	return 0;
+	lock_lockables(0);
+	spin_unlock(&g_lock);
+	return num;
 }
 
 /* For 4 system calls below, 
