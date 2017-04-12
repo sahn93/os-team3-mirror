@@ -12,7 +12,7 @@ int is_prime(int n){
 	}
 	return 1;
 }
-int main(int argc, int **argv){
+int main(int argc, char *argv[]){
 	int id, num, i;
 	FILE *fp;
 	char *str;
