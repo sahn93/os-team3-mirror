@@ -18,9 +18,9 @@ int main(int argc, char *argv[]) {
     while(1) {
         syscall(__NR_rotlock_write, 90, 90);
         printf("selector: %d\n", value);
-        value++;
         fprintf(fout, "%d\n", value);
         fclose(fout);
+        value++;
         syscall(__NR_rotunlock_write, 90, 90);
     }
     return 0;
