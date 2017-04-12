@@ -92,25 +92,21 @@ void exit_rotlock(void) {
 
 	spin_lock(&g_lock);
 
-	list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks){
+	list_for_each_entry_safe(alock, acq_tmp, &(acq_lock.acq_locks), acq_locks){
 		if(current->pid == alock->lock.pid){
 			int alock_is_read = alock->lock.is_read;
 			list_del(&alock->acq_locks);
 			kfree(alock);
 			lock_lockables(alock_is_read);			
-			spin_unlock(&g_lock);
-			return;
 		}
 	}
 
-	list_for_each_entry(plock, &(pend_lock.pend_locks), pend_locks){
+	list_for_each_entry_safe(plock, pend_tmp, &(pend_lock.pend_locks), pend_locks){
 		if(current->pid == plock->lock.pid){
 			int plock_is_read = plock->lock.is_read;
 			list_del(&plock->pend_locks);
 			kfree(plock);
 			lock_lockables(plock_is_read);
-			spin_unlock(&g_lock);
-			return;
 		}
 	}
 	spin_unlock(&g_lock);
