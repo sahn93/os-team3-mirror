@@ -17,13 +17,21 @@ int main(int argc, int **argv){
 	FILE *fp;
 	char *str;
 	str = malloc(1024+1);
-	if(argc <= 1)
+	if(argc <= 1){
+		printf("Integer identifier needed.\nProgram terminated.\n"); 
 		return -1;
+	}
 	id = atoi(argv[1]);
 	while(1){
 		/* acquire lock */
 		syscall(381, 90, 90);
 		fp = fopen("integer", "r");
+		if(fp == NULL){
+			printf("Exception: null file pointer.\n");
+			syscall(383, 90, 90);
+			continue;
+		}
+		
 		fgets(str, 1024, fp);
 		num = atoi(str);
 		printf("trial-%d: %d = ", id, num);
