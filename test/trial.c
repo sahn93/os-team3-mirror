@@ -50,5 +50,6 @@ int main(int argc, int **argv){
 		/* release lock */
 		syscall(383, 90, 90);
 	}
+	free(str);
 	return 0;
 }
