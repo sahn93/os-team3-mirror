@@ -190,7 +190,8 @@ int lock_lockables(int caller_is_readlock) {
                 count++;
                 // In this case, no more pending one acquires a lock.
                 break;
-            } else if (read_lockable(&(plock->lock))) {
+            } else if (plock->lock.is_read==1
+                    && read_lockable(&(plock->lock))) {
                 // If the first lockable lock is a read lock, lock every lockable read locks.
                 // Since write lock can't acqure a lock, make a flag.
                 ignore_writelock=1;
