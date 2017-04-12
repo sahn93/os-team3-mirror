@@ -87,30 +87,26 @@ void exit_rotlock(void) {
 	// TODO : 1. Acquire guard lock, 2. Remove elements in acquired list and pending list which has its pid, 
 	// 3. If removed an element from acquired list, give lock for pending locks, 4. Release guard lock.
 
-	struct rot_lock_acq *alock;
-	struct rot_lock_pend *plock;
+	struct rot_lock_acq *alock, *acq_tmp;
+	struct rot_lock_pend *plock, *pend_tmp;
 
 	spin_lock(&g_lock);
 
-	list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks){
+	list_for_each_entry_safe(alock, acq_tmp, &(acq_lock.acq_locks), acq_locks){
 		if(current->pid == alock->lock.pid){
 			int alock_is_read = alock->lock.is_read;
 			list_del(&alock->acq_locks);
 			kfree(alock);
 			lock_lockables(alock_is_read);			
-			spin_unlock(&g_lock);
-			return;
 		}
 	}
 
-	list_for_each_entry(plock, &(pend_lock.pend_locks), pend_locks){
+	list_for_each_entry_safe(plock, pend_tmp, &(pend_lock.pend_locks), pend_locks){
 		if(current->pid == plock->lock.pid){
 			int plock_is_read = plock->lock.is_read;
 			list_del(&plock->pend_locks);
 			kfree(plock);
 			lock_lockables(plock_is_read);
-			spin_unlock(&g_lock);
-			return;
 		}
 	}
 	spin_unlock(&g_lock);
@@ -227,7 +223,7 @@ asmlinkage int sys_set_rotation(int degree){
 
 	spin_lock(&g_lock);
 	dev_degree = degree;
-	lock_lockables(0);
+	num = lock_lockables(0);
 	spin_unlock(&g_lock);
 	return num;
 }
@@ -295,7 +291,8 @@ int _rotunlock(int degree, int range, int is_read) {
     // Then, remove this from the acqired locks list and let the locks in the pending
     // list to acquire their locks by calling lock_lockables.
 	
-	struct rot_lock_acq *to_unlock;  
+	struct rot_lock_acq *to_unlock;
+	int err, ret = 0;
 
 	if (!is_valid_input(degree, range)) 
 		return -EINVAL;
@@ -309,10 +306,11 @@ int _rotunlock(int degree, int range, int is_read) {
 
 	list_del(&to_unlock->acq_locks);
 	kfree(to_unlock);
-	lock_lockables(is_read);
+	err = lock_lockables(is_read);
+	if (err < 0) ret = err;
 	
 	spin_unlock(&g_lock);
-	return 0;
+	return ret;
 }
 
 asmlinkage int sys_rotunlock_read(int degree, int range){
