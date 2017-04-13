@@ -6,6 +6,8 @@
 #include <linux/spinlock.h>
 #include <linux/sched.h>
 
+// #define ROT_LOCK_DEBUG
+
 int dev_degree = -1;
 // Spinlock for everything in rotation.c
 DEFINE_SPINLOCK(g_lock);
@@ -23,7 +25,7 @@ int is_valid_input(int degree, int range) {
 	return 1;
 }
 
-struct rot_lock_acq *find_by_range(int degree, int range) {
+struct rot_lock_acq *find_by_range(int degree, int range, int committed) {
 	// TODO : If there is matching process with current pid and given degree range in running list,
     // return corresponding list_head. Otherwise (no matching node), return NULL.
     struct rot_lock_acq *alock;
@@ -31,7 +33,9 @@ struct rot_lock_acq *find_by_range(int degree, int range) {
     list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
        if (current->pid == alock->lock.pid
                && degree == alock->lock.degree
-               && range == alock->lock.range) {
+               && range == alock->lock.range
+			   && committed == alock->committed) {
+		   alock->committed = 1;
            return alock;
        }
     } 
@@ -135,7 +139,8 @@ int lock_lockables(int caller_is_readlock) {
     if (caller_is_readlock) {
         list_for_each_entry_safe(plock, tmp, &(pend_lock.pend_locks), pend_locks) {
            if (plock->lock.is_read==0
-                   && write_lockable(&(plock->lock))) {
+                   && write_lockable(&(plock->lock))
+				   && dev_deg_in_range(&(plock->lock))) {
                // lock the first write lock in the pending list.
                // make an alock element and put it into the acq_lock list.
                alock = (struct rot_lock_acq *) kmalloc(sizeof(*alock), GFP_KERNEL);
@@ -143,6 +148,7 @@ int lock_lockables(int caller_is_readlock) {
                    return -ENOMEM;
                }
                alock->lock = plock->lock;
+			   alock->committed = 0;
                // Then, free this plock.
                list_add_tail(&(alock->acq_locks), &acq_lock.acq_locks);
                wake_up_process(find_task_by_vpid(alock->lock.pid));
@@ -157,7 +163,8 @@ int lock_lockables(int caller_is_readlock) {
         list_for_each_entry_safe(plock, tmp, &(pend_lock.pend_locks), pend_locks) {
             if (plock->lock.is_read==0
                     && ignore_writelock==0
-                    && write_lockable(&(plock->lock))) {
+                    && write_lockable(&(plock->lock))
+					&& dev_deg_in_range(&(plock->lock))) {
                 // lock the write lock if it is the first lockable lock in pending list.
                 // make an alock element and put it into the acq_lock list.
                 alock = (struct rot_lock_acq *) kmalloc(sizeof(*alock), GFP_KERNEL);
@@ -165,6 +172,7 @@ int lock_lockables(int caller_is_readlock) {
                    return -ENOMEM;
                 }
                 alock->lock = plock->lock;
+			    alock->committed = 0;
                 list_add_tail(&(alock->acq_locks), &acq_lock.acq_locks);
                 wake_up_process(find_task_by_vpid(alock->lock.pid));
                 // Then, free this plock.
@@ -174,7 +182,8 @@ int lock_lockables(int caller_is_readlock) {
                 // In this case, no more pending one acquires a lock.
                 break;
             } else if (plock->lock.is_read==1
-                    && read_lockable(&(plock->lock))) {
+                    && read_lockable(&(plock->lock))
+					&& dev_deg_in_range(&(plock->lock))) {
                 // If the first lockable lock is a read lock, lock every lockable read locks.
                 // Since write lock can't acqure a lock, make a flag.
                 ignore_writelock=1;
@@ -184,6 +193,7 @@ int lock_lockables(int caller_is_readlock) {
                    return -ENOMEM;
                 }
                 alock->lock = plock->lock;
+			    alock->committed = 0;
                 list_add_tail(&(alock->acq_locks), &acq_lock.acq_locks);
                 wake_up_process(find_task_by_vpid(alock->lock.pid));
                 // Then, free this plock.
@@ -209,6 +219,9 @@ asmlinkage int sys_set_rotation(int degree){
 
 	spin_lock(&g_lock);
 	dev_degree = degree;
+#ifdef ROT_LOCK_DEBUG
+	printk("[set_rotation] device degree = %d\n", dev_degree);
+#endif
 	num = lock_lockables(0);
 	spin_unlock(&g_lock);
 	return num;
@@ -235,6 +248,10 @@ int _rotlock(int degree, int range, int is_read) {
 	curr_rot_lock.pid = current->pid;
 	curr_rot_lock.is_read = is_read;
 	
+#ifdef ROT_LOCK_DEBUG
+	printk("[rot_lock] process %d entered rot_lock\n", current->pid);
+#endif
+
 	if (dev_deg_in_range(&curr_rot_lock) && is_lockable(&curr_rot_lock)) {
 		curr_acq = (struct rot_lock_acq *)kmalloc(sizeof(struct rot_lock_acq), GFP_KERNEL);
 		if (curr_acq == NULL) {
@@ -242,12 +259,10 @@ int _rotlock(int degree, int range, int is_read) {
 			return -ENOMEM;
 		}
 		curr_acq->lock = curr_rot_lock;
+		curr_acq->committed = 1;
 		list_add_tail(&curr_acq->acq_locks, &acq_lock.acq_locks);
-		spin_unlock(&g_lock);
 	}
 	else {
-		set_current_state(TASK_INTERRUPTIBLE);
-	
 		curr_pend = (struct rot_lock_pend *)kmalloc(sizeof(struct rot_lock_pend), GFP_KERNEL);
 		if (curr_pend == NULL) {
 			spin_unlock(&g_lock);
@@ -255,12 +270,27 @@ int _rotlock(int degree, int range, int is_read) {
 		}
 		curr_pend->lock = curr_rot_lock;
 		list_add_tail(&curr_pend->pend_locks, &pend_lock.pend_locks);
-
-		spin_unlock(&g_lock);
-		schedule();
-
-		// lock_lockables will move this process from pending queue to acquired queue
+		while (find_by_range(degree, range, 0) == NULL) {
+			set_current_state(TASK_INTERRUPTIBLE);
+			
+#ifdef ROT_LOCK_DEBUG
+	printk("[rot_lock] process %d ready to sleep\n", current->pid);
+#endif
+			spin_unlock(&g_lock);
+			schedule();
+			spin_lock(&g_lock);
+#ifdef ROT_LOCK_DEBUG
+	printk("[rot_lock] process %d woke up\n", current->pid);
+#endif
+			;
+		}
 	}
+
+#ifdef ROT_LOCK_DEBUG
+	printk("[rot_lock] process %d exited rot_lock\n", current->pid);
+#endif
+
+	spin_unlock(&g_lock);
 	return 0;
 }
 
@@ -284,7 +314,12 @@ int _rotunlock(int degree, int range, int is_read) {
 		return -EINVAL;
 	
 	spin_lock(&g_lock);
-	to_unlock = find_by_range(degree, range);
+
+#ifdef ROT_LOCK_DEBUG
+	printk("[rot_unlock] process %d entered rot_unlock\n", current->pid);
+#endif
+
+	to_unlock = find_by_range(degree, range, 1);
 	if (to_unlock == NULL || to_unlock->lock.is_read != is_read) {
 		spin_unlock(&g_lock);
 		return -EINVAL;
@@ -295,6 +330,10 @@ int _rotunlock(int degree, int range, int is_read) {
 	err = lock_lockables(is_read);
 	if (err < 0) ret = err;
 	
+#ifdef ROT_LOCK_DEBUG
+	printk("[rot_unlock] process %d exited rot_unlock\n", current->pid);
+#endif
+
 	spin_unlock(&g_lock);
 	return ret;
 }
