@@ -19,10 +19,11 @@ This project consists of 3 parts in kernel and test respectively.
 1. Locker have to contain current degree in its range.
 2. A reader can acquire lock even if other readers already acquired lock within its range.
 3. Both reader and writer can't acquire lock if a writer already acquired within its range.
-4. Writer starvation should be avoided.
+4. Writer starvation should be avoided (readers have to wait if a reader occupying a lock and a writer is waiting for the range).
 
 ### 2. Additional policy
-By the policy 1-4, readers have to wait if a reader occupying a lock and a writer is waiting for the range. After the reader unlocks, we decided to give lock for the waiting writer.
+1. While avoiding writer starvation, if acquired reader releases it's lock then writer grabs the lock first.
+2. If there are several writer locks who can grab the lock, we give the lock to writer who comes first. (In FIFO order)
 
 ## High-level design
 
@@ -39,7 +40,7 @@ There are 2 situations that let the processes in pending acquire `rot_lock`.
 * When degree is updated
 * When a lock is unlocked
 
-In both situation, we will check whether there are available locks in pending list and put them into the acquired list and wake up the processes.
+In both situation, this program checks whether there are available locks in pending list and put them into the acquired list and wake up the processes in FIFO order.
 
 ## Implementation
 
