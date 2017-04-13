@@ -101,3 +101,4 @@ We have tested and passed for all scenarios in this [issue](https://github.com/s
 * We have learned the concept of reader-writer lock
 * We have learned how to use `schedule` and `set_current_state(TASK_INTERRUPTIBLE)` and `wake_up_process`
 * We have learned about how to manage extreme cases such as unexpectedly terminating processes.
+* We have experienced dead lock and understood why it occurred.
