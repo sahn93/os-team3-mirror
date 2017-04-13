@@ -5,14 +5,14 @@ This assignment includes implementing a new kernel synchronization primitive in 
 This project consists of 3 parts in kernel and test respectively.
 
 ### 1. Kernel part
-* `rotlock_read` & `rotlock_write`: Acquires rotation lock.
-* `rotunlock_read` & `rotunlock_write`: 
+* `rotlock_read` & `rotlock_write`: Acquires rotation read/write lock.
+* `rotunlock_read` & `rotunlock_write`: Releases rotation read/write lock.
 
 ### 2. Test part
-* `set_rotation`
-* `rotd`
-* `selector` & `trial`
-
+* `set_rotation`: Sets device rotation as `degree`.
+* `rotd`: Updates device rotation every 2 seconds in background.
+* `selector` & `trial`: `selector` grabs and releases write lock to increase `integer`. `trial` grabs and releases read lock to factorize `integer`. 
+ 
 ## High-level design
 ## Policies
 ### 1. Policies from original spec
