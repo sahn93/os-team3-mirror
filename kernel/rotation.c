@@ -59,7 +59,10 @@ int read_lockable(struct rot_lock *r) {
         if (range_overlap(r, &(plock->lock))
                 && dev_deg_in_range(&(plock->lock))
                 && plock->lock.is_read == 0) {
-            return 0;
+			list_for_each_entry(alock, &(acq_lock.acq_locks), acq_locks) {
+				if (alock->lock.is_read == 1 && range_overlap(&(alock->lock), &(plock->lock)))
+					return 0;
+			}
         }
     }
     return 1;
