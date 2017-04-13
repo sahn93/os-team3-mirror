@@ -42,6 +42,42 @@ There are 2 situations that let the processes in pending acquire `rot_lock`.
 In both situation, we will check whether there are available locks in pending list and put them into the acquired list and wake up the processes.
 
 ## Implementation
+
+### 1. Data Structure
+First, we made `rot_lock` struct as below. This struct has `degree`, `range`, `pid`, and `is_read` to indicate the lock is read or write. 
+
+```c
+struct rot_lock {
+    int degree;
+    int range;
+    pid_t pid; // caller user process's pid.
+    int is_read; // 1 for read lock, 0 for write lock.
+};
+```
+Next, we made two independent lists which have acquired locks and pending locks respectively. In `rot_lock_acq`, we added one integer variable called `committed` which indicates whether the lock finished or not. 
+
+```c
+struct rot_lock_acq {
+    struct rot_lock lock;
+    struct list_head acq_locks;
+	int committed; // Set 1 if rot_lock_acq's corresponding lock system call is finished. Otherwise 0
+};
+struct rot_lock_pend {
+    struct rot_lock lock;
+    struct list_head pend_locks;
+};
+```
+### 2. Functions
+
+* `int is_valid_input(int degree, int range)` checks if the input `degree` and `range` are valid or not.
+* `struct rot_lock_acq *find_by_range(int degree, int range, int committed)` gets `degree`, `range`, `committed` and finds the node with such values in the list, and returns the pointer of the node.
+* `int read_lockable(struct rot_lock *r)` returns whether the input read lock can grab lock or not.
+* `int write_lockable(struct rot_lock *r)` returns whether the input write lock can grab lock or not.
+* `void exit_rotlock(void)` handles when the current process terminates. It deletes any nodes with that process in both lists and call `lock_lockables` so that it can grab any other locks if available. 
+* `int range_overlap(struct rot_lock *r1, struct rot_lock *r2)` detects if two locks have overlap ranges.
+* `int dev_deg_in_range(struct rot_lock *r)` returns 1 if `dev_degree` is included in the lock's range.
+* `int lock_lockables(int caller_is_readlock)` gets whether the caller is readlock and lock any other locks if available.
+
 ## How to build kernel & Test
 ### Build & flash kernel
 1. Type `build` on the root directory to build kernel.
@@ -59,4 +95,8 @@ In both situation, we will check whether there are available locks in pending li
 
 We have tested and passed for all scenarios in this [issue](https://github.com/swsnu/osspr2017/issues/68).
 
-## What we've learned
+## What we have learned
+
+* We have learned the concept of reader-writer lock
+* We have learned how to use `schedule` and `set_current_state(TASK_INTERRUPTIBLE)` and `wake_up_process`
+* We have learned about how to manage extreme cases such as unexpectedly terminating processes.
