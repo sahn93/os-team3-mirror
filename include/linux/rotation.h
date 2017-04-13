@@ -12,6 +12,7 @@ struct rot_lock {
 struct rot_lock_acq {
     struct rot_lock lock;
     struct list_head acq_locks;
+	int committed; // Set 1 if rot_lock_acq's corresponding lock system call is finished. Otherwise 0
 };
 // list of rotation locks pending.
 struct rot_lock_pend {
@@ -20,7 +21,7 @@ struct rot_lock_pend {
 };
 
 int is_valid_input(int degree, int range);
-struct rot_lock_acq *find_by_range(int degree, int range);
+struct rot_lock_acq *find_by_range(int degree, int range, int committed);
 int read_lockable(struct rot_lock *r);
 int write_lockable(struct rot_lock *r);
 void exit_rotlock(void);
