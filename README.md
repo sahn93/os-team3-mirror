@@ -42,5 +42,21 @@ There are 2 situations that let the processes in pending acquire `rot_lock`.
 In both situation, we will check whether there are available locks in pending list and put them into the acquired list and wake up the processes.
 
 ## Implementation
-## How to build kernel
+## How to build kernel & Test
+### Build & flash kernel
+1. Type `build` on the root directory to build kernel.
+2. Type `flash` to upload kernel to the ARTIK.
+
+### Compile & push test code
+1. Type `arm-linux-gnueabi-gcc <source file> -o <output name>` to compile test code.
+2. Connect SDB by typing `direct_set_debug.sh --sdb-set` on Artik.
+3. Type `push <source> <destination>` to send a file to Artik.
+
+### Run the test
+1. Type `sdb shell` to use Artik's shell.
+2. Run `rotd` first.
+3. Run `selector` and `trial` according to various scenarios.
+
+We have tested and passed for all scenarios in this [issue](https://github.com/swsnu/osspr2017/issues/68).
+
 ## What we've learned
