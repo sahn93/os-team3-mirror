@@ -235,7 +235,7 @@ int _rotlock(int degree, int range, int is_read) {
 	curr_rot_lock.pid = current->pid;
 	curr_rot_lock.is_read = is_read;
 	
-	if (is_lockable(&curr_rot_lock)) {
+	if (dev_deg_in_range(&curr_rot_lock) && is_lockable(&curr_rot_lock)) {
 		curr_acq = (struct rot_lock_acq *)kmalloc(sizeof(struct rot_lock_acq), GFP_KERNEL);
 		if (curr_acq == NULL) {
 			spin_unlock(&g_lock);
