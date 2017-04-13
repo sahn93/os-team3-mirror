@@ -14,11 +14,32 @@ This project consists of 3 parts in kernel and test respectively.
 * `selector` : Grabs and releases write lock to increase `integer`.
 * `trial`: Grabs and releases read lock to factorize `integer`.
  
-## High-level design
 ## Policies
-### 1. Policies from original spec
+### 1. Policies from original specs
+1. Locker have to contain current degree in its range.
+2. A reader can acquire lock even if other readers already acquired lock within its range.
+3. Both reader and writer can't acquire lock if a writer already acquired within its range.
+4. Writer starvation should be avoided.
+
 ### 2. Additional policy
-We established an additional policy for this project.
+By the policy 1-4, readers have to wait if a reader occupying a lock and a writer is waiting for the range. After the reader unlocks, we decided to give lock for the waiting writer.
+
+## High-level design
+
+To synchronize processes that uses rotation locks, we introduced a `spinlock_t` variable, which name is `g_lock`. Every system call have to take this lock to start their tasks, and also have to unlock when finishing their jobs. Therefore, our system calls never be executed concurrently between multiple processes.
+
+We also instroduced a structure `rot_lock` that contains pid of the lock owner to distinguish a lock from locks with same degree and range.
+
+We managed rotation locks with 2 lists, `rot_lock_acq` stands for the list of `rot_lock`s that occupying a lock and `rot_lock_pend` that stands for the list of `rot_lock`s that pending for a lock.
+
+When a reader or writer failed to acquire `rot_lock`, we put them into the `rot_lock_pend` and stop the process. Else, it takes a lock and run its task.
+
+There are 2 situations that let the processes in pending acquire `rot_lock`.
+
+* When degree is updated
+* When a lock is unlocked
+
+In both situation, we will check whether there are available locks in pending list and put them into the acquired list and wake up the processes.
 
 ## Implementation
 ## How to build kernel
