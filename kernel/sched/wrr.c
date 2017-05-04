@@ -1,6 +1,24 @@
 #include "sched.h"
 #include <linux/slab.h>
 
+void init_wrr_rq(struct wrr_rq *wrr_rq) {
+	struct wrr_prio_array *array;
+	int i;
+
+	array = &wrr_rq->active;
+	for (i = 0; i < MAX_WRR_PRIO; i++) {
+		INIT_LIST_HEAD(array->queue + i);
+		__clear_bit(i, array->bitmap);
+	}
+	__set_bit(MAX_WRR_PRIO, array->bitmap);
+
+	wrr_rq->wrr_nr_running = 0;
+#ifdef CONFIG_SMP
+	wrr_rq->wrr_total_weight = 0;
+#endif
+	raw_spin_lock_init(&wrr_rq->wrr_runtime_lock);
+}
+
 static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	/*TODO*/
 }
