@@ -3858,6 +3858,11 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 			do_set_cpus_allowed(p, &hmp_slow_cpu_mask);
 #endif
 	}
+	else if (policy == SCHED_WRR) {
+		p->sched_class = &wrr_sched_class;
+		p->wrr.weight = 10;
+		p->wrr.time_slice = HZ / 10;
+	}
 	else
 		p->sched_class = &fair_sched_class;
 	set_load_weight(p);
@@ -3901,14 +3906,14 @@ recheck:
 
 		if (policy != SCHED_FIFO && policy != SCHED_RR &&
 				policy != SCHED_NORMAL && policy != SCHED_BATCH &&
-				policy != SCHED_IDLE)
+				policy != SCHED_IDLE && policy != SCHED_WRR)
 			return -EINVAL;
 	}
 
 	/*
 	 * Valid priorities for SCHED_FIFO and SCHED_RR are
 	 * 1..MAX_USER_RT_PRIO-1, valid priority for SCHED_NORMAL,
-	 * SCHED_BATCH and SCHED_IDLE is 0.
+	 * SCHED_BATCH, SCHED_IDLE, and SCHED_WRR is 0.
 	 */
 	if (param->sched_priority < 0 ||
 	    (p->mm && param->sched_priority > MAX_USER_RT_PRIO-1) ||
