@@ -92,6 +92,12 @@ struct rt_prio_array {
 	struct list_head queue[MAX_RT_PRIO];
 };
 
+#define MAX_WRR_PRIO 20
+struct wrr_prio_array {
+	DECLARE_BITMAP(bitmap, MAX_WRR_PRIO+1);
+	struct list_head queue[MAX_WRR_PRIO];
+};
+
 struct rt_bandwidth {
 	/* nests inside the rq lock: */
 	raw_spinlock_t		rt_runtime_lock;
@@ -358,6 +364,16 @@ struct rt_rq {
 #endif
 };
 
+struct wrr_rq {
+	struct wrr_prio_array active;
+	unsigned int wrr_nr_running;
+
+#ifdef CONFIG_SMP
+	unsigned int wrr_total_weight;
+	// struct plist_head pushable_tasks;
+#endif
+};
+
 #ifdef CONFIG_SMP
 
 /*
@@ -421,6 +437,7 @@ struct rq {
 	u64 nr_switches;
 
 	struct cfs_rq cfs;
+	struct wrr_rq wrr;
 	struct rt_rq rt;
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
