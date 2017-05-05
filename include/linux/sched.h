@@ -1056,6 +1056,9 @@ struct sched_rt_entity {
 
 struct sched_wrr_entity {
 	struct list_head run_list;
+#ifdef CONFIG_SMP
+	struct list_head weight_list;
+#endif
 	unsigned int weight;
 	unsigned int time_slice;
 	unsigned int time_left;

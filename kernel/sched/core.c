@@ -3861,6 +3861,9 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 	else if (policy == SCHED_WRR) {
 		p->sched_class = &wrr_sched_class;
 		INIT_LIST_HEAD(&p->wrr.run_list);
+#ifdef CONFIG_SMP
+		INIT_LIST_HEAD(&p->wrr.weight_list);
+#endif
 		p->wrr.weight = 10;
 		p->wrr.time_slice = HZ / 10;
 		p->wrr.time_left = 0;
