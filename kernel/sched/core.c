@@ -3860,8 +3860,10 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 	}
 	else if (policy == SCHED_WRR) {
 		p->sched_class = &wrr_sched_class;
+		INIT_LIST_HEAD(&p->wrr.run_list);
 		p->wrr.weight = 10;
 		p->wrr.time_slice = HZ / 10;
+		p->wrr.time_left = 0;
 	}
 	else
 		p->sched_class = &fair_sched_class;

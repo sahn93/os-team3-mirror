@@ -370,7 +370,6 @@ struct wrr_rq {
 #ifdef CONFIG_SMP
 	struct wrr_prio_array active;
 	unsigned int wrr_total_weight;
-	// struct plist_head pushable_tasks;
 #endif
 
 	raw_spinlock_t wrr_runtime_lock;
