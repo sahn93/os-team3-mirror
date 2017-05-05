@@ -1059,9 +1059,6 @@ struct sched_wrr_entity {
 	unsigned int weight;
 	unsigned int time_slice;
 	unsigned int time_spent;
-
-	int setweight_pending;
-	unsigned int new_weight;
 };
 
 struct rcu_node;
