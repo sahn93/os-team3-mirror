@@ -3858,6 +3858,16 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 			do_set_cpus_allowed(p, &hmp_slow_cpu_mask);
 #endif
 	}
+	else if (policy == SCHED_WRR) {
+		p->sched_class = &wrr_sched_class;
+		INIT_LIST_HEAD(&p->wrr.run_list);
+#ifdef CONFIG_SMP
+		INIT_LIST_HEAD(&p->wrr.weight_list);
+#endif
+		p->wrr.weight = 10;
+		p->wrr.time_slice = HZ / 10;
+		p->wrr.time_left = 0;
+	}
 	else
 		p->sched_class = &fair_sched_class;
 	set_load_weight(p);
@@ -3901,14 +3911,14 @@ recheck:
 
 		if (policy != SCHED_FIFO && policy != SCHED_RR &&
 				policy != SCHED_NORMAL && policy != SCHED_BATCH &&
-				policy != SCHED_IDLE)
+				policy != SCHED_IDLE && policy != SCHED_WRR)
 			return -EINVAL;
 	}
 
 	/*
 	 * Valid priorities for SCHED_FIFO and SCHED_RR are
 	 * 1..MAX_USER_RT_PRIO-1, valid priority for SCHED_NORMAL,
-	 * SCHED_BATCH and SCHED_IDLE is 0.
+	 * SCHED_BATCH, SCHED_IDLE, and SCHED_WRR is 0.
 	 */
 	if (param->sched_priority < 0 ||
 	    (p->mm && param->sched_priority > MAX_USER_RT_PRIO-1) ||
@@ -7014,6 +7024,7 @@ void __init sched_init(void)
 		rq->calc_load_active = 0;
 		rq->calc_load_update = jiffies + LOAD_FREQ;
 		init_cfs_rq(&rq->cfs);
+		init_wrr_rq(&rq->wrr);
 		init_rt_rq(&rq->rt, rq);
 #ifdef CONFIG_FAIR_GROUP_SCHED
 		root_task_group.shares = ROOT_TASK_GROUP_LOAD;
