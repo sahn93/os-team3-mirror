@@ -92,10 +92,10 @@ struct rt_prio_array {
 	struct list_head queue[MAX_RT_PRIO];
 };
 
-#define MAX_WRR_PRIO 20
-struct wrr_prio_array {
-	DECLARE_BITMAP(bitmap, MAX_WRR_PRIO+1);
-	struct list_head queue[MAX_WRR_PRIO];
+#define MAX_WRR_WEIGHT 20
+struct wrr_weight_array {
+	DECLARE_BITMAP(bitmap, MAX_WRR_WEIGHT+1);
+	struct list_head queue[MAX_WRR_WEIGHT];
 };
 
 struct rt_bandwidth {
@@ -368,7 +368,7 @@ struct wrr_rq {
 	struct list_head rq;
 
 #ifdef CONFIG_SMP
-	struct wrr_prio_array active;
+	struct wrr_weight_array active;
 	unsigned int wrr_total_weight;
 #endif
 

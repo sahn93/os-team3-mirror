@@ -8,22 +8,36 @@ void init_wrr_rq(struct wrr_rq *wrr_rq) {
 	INIT_LIST_HEAD(&wrr_rq->rq);
 #ifdef CONFIG_SMP
 	array = &wrr_rq->active;
-	for (i = 0; i < MAX_WRR_PRIO; i++) {
+	for (i = 0; i < MAX_WRR_WEIGHT; i++) {
 		INIT_LIST_HEAD(array->queue + i);
 		__clear_bit(i, array->bitmap);
 	}
-	__set_bit(MAX_WRR_PRIO, array->bitmap);
+	__set_bit(MAX_WRR_WEIGHT, array->bitmap);
 	wrr_rq->wrr_total_weight = 0;
+
 #endif
 	raw_spin_lock_init(&wrr_rq->wrr_runtime_lock);
 }
 
 static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	/*TODO*/
+	struct sched_wrr_entity *wrr_se = &p->wrr;
+	list_add_tail(&wrr_se->run_list, rq->wrr_rq);
+	
+#ifdef CONFIG_SMP
+	struct list_head *wq = rq->wrr_rq->active->queue[&wrr_se->weight-1];
+	list_add(&wrr_se->weight_list, wq);
+#endif
 }
 
 static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	/*TODO*/
+	struct sched_wrr_entity *wrr_se = &p->wrr;
+	list_del_init(&wrr_se->run_list);
+
+#ifdef CONFIG_SMP
+	list_del_init(&wrr_se->weight_list);
+#endif
 }
 
 static struct task_struct *pick_next_task_wrr(struct rq *rq) {
