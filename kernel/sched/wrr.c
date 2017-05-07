@@ -26,9 +26,23 @@ static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	/*TODO*/
 }
 
+static void yield_task_wrr(struct rq *rq) {
+	struct wrr_rq *wrr_se = &rq->wrr;
+	if (wrr_se) {
+		struct list_head *head = &wrr_se->rq;
+		struct list_head *first = &head->next;
+		if(first!=head) {
+			list_del(first);
+			list_add_tail(first, head);
+		}
+	}
+}
 static struct task_struct *pick_next_task_wrr(struct rq *rq) {
-	/*TODO*/
-	return NULL;
+	struct wrr_rq *wrr_se = &rq->wrr;
+	struct task_struct *p;
+	if(&wrr_se->rq == wrr_se->rq.next)
+		return NULL;
+	return container_of(wrr_se->rq.next, struct task_struct, wrr);
 }
 
 static void put_prev_task_wrr(struct rq *rq, struct task_struct *p) {
