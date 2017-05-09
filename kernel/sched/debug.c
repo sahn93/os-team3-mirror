@@ -429,7 +429,7 @@ static int sched_debug_show(struct seq_file *m, void *v)
 	int cpu = (unsigned long)(v - 2);
 
 	if (cpu != -1)
-	print_cpu(m, cpu);
+		print_cpu(m, cpu);
 	else
 		sched_debug_header(m);
 
