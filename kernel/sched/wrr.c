@@ -137,6 +137,24 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *p, int queued) {
 	set_tsk_need_resched(p);
 }
 
+/*
+ * We switched to the sched_wrr class.
+ */
+static void switched_to_wrr(struct rq *rq, struct task_struct *p)
+{
+	if (!p->on_rq)
+		return;
+	/*
+	 * We were most likely switched from sched_rt, so
+	 * kick off the schedule if running, otherwise just see
+	 * if we can still preempt the current task.
+	 */
+	if (rq->curr == p)
+		resched_task(rq->curr);
+	else
+		check_preempt_curr(rq, p, 0);
+}
+
 const struct sched_class wrr_sched_class = {
 	.next				= &fair_sched_class,
 	.enqueue_task		= enqueue_task_wrr,
@@ -148,7 +166,7 @@ const struct sched_class wrr_sched_class = {
 #ifdef CONFIG_SMP
 	.select_task_rq		= select_task_rq_wrr,
 #endif
-	
 	.set_curr_task		= set_curr_task_wrr,
 	.task_tick			= task_tick_wrr,
+	.switched_to 		= switched_to_wrr
 };
