@@ -30,6 +30,7 @@ static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	wq = &rq->wrr.active.queue[wrr_se->weight-1];
 	list_add(&wrr_se->weight_list, wq);
 #endif
+	rq->wrr.wrr_total_weight++;
 }
 
 static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
@@ -40,6 +41,7 @@ static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 #ifdef CONFIG_SMP
 	list_del_init(&wrr_se->weight_list);
 #endif
+	rq->wrr.wrr_total_weight--;
 }
 
 static struct task_struct *pick_next_task_wrr(struct rq *rq) {
