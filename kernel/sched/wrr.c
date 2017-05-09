@@ -44,9 +44,23 @@ static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 #endif
 }
 
+static void yield_task_wrr(struct rq *rq) {
+	struct wrr_rq *wrr_rq = &rq->wrr;
+	if (wrr_rq) {
+		struct list_head *head = &wrr_rq->rq;
+		struct list_head *first = &head->next;
+		if(first!=head) {
+			list_del(first);
+			list_add_tail(first, head);
+		}
+	}
+}
 static struct task_struct *pick_next_task_wrr(struct rq *rq) {
-	/*TODO*/
-	return NULL;
+	struct wrr_rq *wrr_rq = &rq->wrr;
+	struct task_struct *p;
+	if(!wrr_rq || (&wrr_rq->rq == wrr_rq->rq.next))
+		return NULL;
+	return container_of(wrr_rq->rq.next, struct task_struct, wrr);
 }
 
 static void put_prev_task_wrr(struct rq *rq, struct task_struct *p) {
@@ -67,7 +81,7 @@ const struct sched_class wrr_sched_class = {
 	.next				= &fair_sched_class,
 	.enqueue_task		= enqueue_task_wrr,
 	.dequeue_task		= dequeue_task_wrr,
-
+	.yield_task			= yield_task_wrr,
 	.pick_next_task		= pick_next_task_wrr,
 	.put_prev_task		= put_prev_task_wrr,
 
