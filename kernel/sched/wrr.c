@@ -40,7 +40,7 @@ static void yield_task_wrr(struct rq *rq) {
 static struct task_struct *pick_next_task_wrr(struct rq *rq) {
 	struct wrr_rq *wrr_se = &rq->wrr;
 	struct task_struct *p;
-	if(wrr_se && &wrr_se->rq == wrr_se->rq.next)
+	if(!wrr_se || (&wrr_se->rq == wrr_se->rq.next))
 		return NULL;
 	return container_of(wrr_se->rq.next, struct task_struct, wrr);
 }
@@ -63,7 +63,7 @@ const struct sched_class wrr_sched_class = {
 	.next				= &fair_sched_class,
 	.enqueue_task		= enqueue_task_wrr,
 	.dequeue_task		= dequeue_task_wrr,
-
+	.yield_task			= yield_task_wrr,
 	.pick_next_task		= pick_next_task_wrr,
 	.put_prev_task		= put_prev_task_wrr,
 
