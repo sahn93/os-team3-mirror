@@ -2768,6 +2768,7 @@ void scheduler_tick(void)
 #ifdef CONFIG_SMP
 	rq->idle_balance = idle_cpu(cpu);
 	trigger_load_balance(rq, cpu);
+	trigger_wrr_load_balance();
 #endif
 	rq_last_tick_reset(rq);
 }
@@ -7079,6 +7080,9 @@ void __init sched_init(void)
 		INIT_LIST_HEAD(&rq->cfs_tasks);
 
 		rq_attach_root(rq, &def_root_domain);
+
+		if (wrr_next_balance == 0)
+			wrr_next_balance = jiffies + 2 * HZ;
 #ifdef CONFIG_NO_HZ_COMMON
 		rq->nohz_flags = 0;
 #endif

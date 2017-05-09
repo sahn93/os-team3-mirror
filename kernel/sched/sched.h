@@ -1054,6 +1054,9 @@ extern const struct sched_class idle_sched_class;
 extern void update_group_power(struct sched_domain *sd, int cpu);
 
 extern void trigger_load_balance(struct rq *rq, int cpu);
+extern void trigger_wrr_load_balance(void);
+extern unsigned long wrr_next_balance;
+
 extern void idle_balance(int this_cpu, struct rq *this_rq);
 
 /*
