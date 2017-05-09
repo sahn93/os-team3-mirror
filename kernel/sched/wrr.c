@@ -2,7 +2,7 @@
 #include <linux/slab.h>
 
 void init_wrr_rq(struct wrr_rq *wrr_rq) {
-	struct wrr_prio_array *array;
+	struct wrr_weight_array *array;
 	int i;
 
 	INIT_LIST_HEAD(&wrr_rq->rq);
@@ -22,10 +22,12 @@ void init_wrr_rq(struct wrr_rq *wrr_rq) {
 static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	/*TODO*/
 	struct sched_wrr_entity *wrr_se = &p->wrr;
-	list_add_tail(&wrr_se->run_list, rq->wrr_rq);
+	struct list_head *wq;
+
+	list_add_tail(&wrr_se->run_list, &rq->wrr.rq);
 	
 #ifdef CONFIG_SMP
-	struct list_head *wq = rq->wrr_rq->active->queue[&wrr_se->weight-1];
+	wq = &rq->wrr.active.queue[wrr_se->weight-1];
 	list_add(&wrr_se->weight_list, wq);
 #endif
 }
