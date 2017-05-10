@@ -142,6 +142,52 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *p, int queued) {
 	set_tsk_need_resched(p);
 }
 
+/*
+ * We switched to the sched_wrr class.
+ */
+static void switched_to_wrr(struct rq *rq, struct task_struct *p)
+{
+	if (!p->on_rq)
+		return;
+	/*
+	 * Case 1: rt -> wrr
+	 *  1): curr is RT: Do nothing.
+	 *  2): curr is WRR: Reschedule.
+	 *  3): curr is CFS: Impossible.
+	 * Case 2: cfs -> wrr
+	 *  1): curr is RT: Do nothing.
+	 *  2): curr is WRR: Do nothing.
+	 *  3): curr is CFS: Preempt!
+	 */
+
+	if (rq->curr == p)
+		resched_task(rq->curr);
+	else
+		check_preempt_curr(rq, p, 0);
+}
+
+/*
+ * Preempt the current task with a newly woken task if needed:
+ */
+static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
+{
+	if (rq->curr.sched_class == &fair_sched_class) {
+		resched_task(rq->curr);
+		return;
+	}
+}
+
+// This function is empty, since WRR have nothing to do with prio.
+static void
+prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
+{
+}
+
+static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
+{
+	
+}
+
 #ifdef CONFIG_SCHED_DEBUG
 extern void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq);
 
@@ -162,12 +208,18 @@ const struct sched_class wrr_sched_class = {
 	.pick_next_task		= pick_next_task_wrr,
 	.put_prev_task		= put_prev_task_wrr,
 
+	.check_preempt_curr	= check_preempt_wakeup,
+
 #ifdef CONFIG_SMP
 	.select_task_rq		= select_task_rq_wrr,
 #endif
-	
 	.set_curr_task		= set_curr_task_wrr,
 	.task_tick			= task_tick_wrr,
+
+	.prio_changed 		= prio_changed_wrr,
+	.switched_to 		= switched_to_wrr,
+
+	.get_rr_interval	= get_rr_interval_wrr
 };
 
 #ifdef CONFIG_SMP
