@@ -183,6 +183,18 @@ static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
 	
 }
 
+#ifdef CONFIG_SCHED_DEBUG
+extern void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq);
+
+void print_wrr_stats(struct seq_file *m, int cpu)
+{
+	struct wrr_rq *wrr_rq;
+	rcu_read_lock();
+	print_wrr_rq(m, cpu, wrr_rq);
+	rcu_read_unlock();
+}
+#endif
+
 const struct sched_class wrr_sched_class = {
 	.next				= &fair_sched_class,
 	.enqueue_task		= enqueue_task_wrr,
