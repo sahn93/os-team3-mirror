@@ -281,7 +281,7 @@ void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq)
 	}
 	return;
 #endif
-	
+	SEQ_printf(m, "\n%-30s\n", "run queue:");
 	list_for_each_entry(curr, &wrr_rq->rq, run_list){
 		SEQ_printf(m, "%-30s: %d\n", "weight", curr->weight);
 		SEQ_printf(m, "%-30s: %d\n", "time_slice", curr->time_slice);
