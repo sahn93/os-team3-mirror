@@ -172,6 +172,17 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 	}
 }
 
+// This function is empty, since WRR have nothing to do with prio.
+static void
+prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
+{
+}
+
+static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
+{
+	
+}
+
 const struct sched_class wrr_sched_class = {
 	.next				= &fair_sched_class,
 	.enqueue_task		= enqueue_task_wrr,
@@ -187,5 +198,9 @@ const struct sched_class wrr_sched_class = {
 #endif
 	.set_curr_task		= set_curr_task_wrr,
 	.task_tick			= task_tick_wrr,
-	.switched_to 		= switched_to_wrr
+
+	.prio_changed 		= prio_changed_wrr,
+	.switched_to 		= switched_to_wrr,
+
+	.get_rr_interval	= get_rr_interval_wrr
 };
