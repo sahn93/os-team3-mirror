@@ -15,6 +15,7 @@
 #include <linux/seq_file.h>
 #include <linux/kallsyms.h>
 #include <linux/utsname.h>
+#include <linux/list.h>
 
 #include "sched.h"
 
@@ -262,6 +263,34 @@ void print_rt_rq(struct seq_file *m, int cpu, struct rt_rq *rt_rq)
 #undef P
 }
 
+void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq)
+{
+	struct sched_wrr_entity *curr;
+	int i;
+	SEQ_printf(m, "\nwrr_rq[%d]:\n", cpu);		
+	
+#ifdef CONFIG_SMP
+	SEQ_printf(m, " .%-30s: %d\n", "wrr_total_weight", wrr_rq->wrr_total_weight);
+
+	for(i = 0; i < 20; i++) {
+		SEQ_printf(m, "\n%-30s: %d\n","weight", i+1);
+		list_for_each_entry(curr, &wrr_rq->active.queue[i], weight_list) {
+			SEQ_printf(m, "%-30s: %d\n", "time_slice", curr->time_slice);
+			SEQ_printf(m, "%-30s: %d\n", "time_left", curr->time_left);
+		}
+	}
+	return;
+#endif
+	SEQ_printf(m, "\n%-30s\n", "run queue:");
+	list_for_each_entry(curr, &wrr_rq->rq, run_list){
+		SEQ_printf(m, "%-30s: %d\n", "weight", curr->weight);
+		SEQ_printf(m, "%-30s: %d\n", "time_slice", curr->time_slice);
+		SEQ_printf(m, "%-30s: %d\n", "time_left", curr->time_left);
+	}
+	
+	return;
+}
+
 extern __read_mostly int sched_clock_running;
 
 static void print_cpu(struct seq_file *m, int cpu)
@@ -326,9 +355,11 @@ do {									\
 #undef P
 #undef P64
 #endif
+	
 	spin_lock_irqsave(&sched_debug_lock, flags);
 	print_cfs_stats(m, cpu);
 	print_rt_stats(m, cpu);
+	print_wrr_stats(m, cpu);
 
 	rcu_read_lock();
 	print_rq(m, rq, cpu);
