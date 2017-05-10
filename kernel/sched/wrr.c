@@ -1,6 +1,11 @@
 #include "sched.h"
 #include <linux/slab.h>
 
+#define WRR_INF 1987654321
+
+DEFINE_SPINLOCK(wrr_lb_lock);
+unsigned long wrr_next_balance = 0;
+
 void init_wrr_rq(struct wrr_rq *wrr_rq) {
 	struct wrr_weight_array *array;
 	int i;
@@ -30,7 +35,7 @@ static void update_curr_wrr(struct rq *rq) {
 	if (unlikely((s64)delta_exec <= 0))
 		return;
 
-	schedstat_set(curr->statistics.exec_max,
+	schedstat_set(curr->se.statistics.exec_max,
 			  max(delta_exec, curr->se.statistics.exec_max));
 
 	curr->se.sum_exec_runtime += delta_exec;
@@ -41,7 +46,6 @@ static void update_curr_wrr(struct rq *rq) {
 }
 
 static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
-	/*TODO*/
 	struct sched_wrr_entity *wrr_se = &p->wrr;
 	struct list_head *wq;
 
@@ -55,7 +59,6 @@ static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 }
 
 static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
-	/*TODO*/
 	struct sched_wrr_entity *wrr_se = &p->wrr;
 	list_del_init(&wrr_se->run_list);
 
@@ -69,7 +72,7 @@ static void yield_task_wrr(struct rq *rq) {
 	struct wrr_rq *wrr_rq = &rq->wrr;
 	if (wrr_rq) {
 		struct list_head *head = &wrr_rq->rq;
-		struct list_head *first = &head->next;
+		struct list_head *first = head->next;
 		if(first!=head) {
 			list_del(first);
 			list_add_tail(first, head);
@@ -78,23 +81,25 @@ static void yield_task_wrr(struct rq *rq) {
 }
 static struct task_struct *pick_next_task_wrr(struct rq *rq) {
 	struct wrr_rq *wrr_rq = &rq->wrr;
-	struct task_struct *p;
+	struct sched_wrr_entity *wrr_se;
+
 	if(!wrr_rq || (&wrr_rq->rq == wrr_rq->rq.next))
 		return NULL;
-	return container_of(wrr_rq->rq.next, struct task_struct, wrr);
+
+	wrr_se = list_entry(wrr_rq->rq.next, struct sched_wrr_entity, run_list);
+	return container_of(wrr_se, struct task_struct, wrr);
 }
 
 static void put_prev_task_wrr(struct rq *rq, struct task_struct *p) {
 	update_curr_wrr(rq);
 }
 
-	/*TODO*/
 #ifdef CONFIG_SMP
 static int select_task_rq_wrr(struct task_struct *p, int sd_flag, int flags) {
 	int cpu = task_cpu(p);
 	struct rq *rq;
 	struct wrr_rq *wrr_rq;
-	int min_wsum = 1987654321, min_cpu = -1, i;
+	int min_wsum = WRR_INF, min_cpu = -1, i;
 
 	if (p->nr_cpus_allowed == 1)
 		return cpu;
@@ -164,3 +169,72 @@ const struct sched_class wrr_sched_class = {
 	.set_curr_task		= set_curr_task_wrr,
 	.task_tick			= task_tick_wrr,
 };
+
+#ifdef CONFIG_SMP
+void trigger_wrr_load_balance() {
+	struct rq *rq, *min_rq, *max_rq;
+	struct sched_wrr_entity *wrr_se;
+	struct task_struct *to_move_ts;
+	int min_cpu = 1, max_cpu = 1;
+	int min_wsum = WRR_INF, max_wsum = -1, curr_wsum;
+	int max_movable_w;
+	int i, endflag = 0;
+
+	// If there's only one working cpu, just ignore load balancing
+	if (num_online_cpus() <= 1)
+		return;
+
+	spin_lock(&wrr_lb_lock);
+
+	// Check whether it's time for load balancing or not.
+	if (time_after_eq(jiffies, wrr_next_balance)) {
+		rcu_read_lock();
+
+		// Find the maximum-weighted cpu and minimum-weighted cpu.
+		for_each_cpu(i, cpu_online_mask) {
+			rq = cpu_rq(i);
+			curr_wsum = rq->wrr.wrr_total_weight;
+			if (curr_wsum < min_wsum) {
+				min_wsum = curr_wsum;
+				min_cpu = i;
+			}
+			if (curr_wsum > max_wsum) {
+				max_wsum = curr_wsum;
+				max_cpu = i;
+			}
+		}
+		rcu_read_unlock();
+
+		if (min_cpu != max_cpu) {
+			min_rq = cpu_rq(min_cpu);
+			max_rq = cpu_rq(max_cpu);
+
+			double_rq_lock(min_rq, max_rq);
+			max_movable_w = min_wsum + (max_wsum - min_wsum) / 2;
+			max_movable_w = (max_movable_w > 20 ? 20 : max_movable_w);
+
+			// Search movable task from highest weight queue
+			for (i = max_movable_w; !endflag && i >= 1; i--) {
+				list_for_each_entry(wrr_se, &max_rq->wrr.active.queue[i-1], weight_list) {
+					to_move_ts = container_of(wrr_se, struct task_struct, wrr);
+
+					// 1. If task is not currently running, and
+					// 2. if the task can be migrated to min_cpu
+					if ((to_move_ts != max_rq->curr)
+							&& cpumask_test_cpu(min_cpu, tsk_cpus_allowed(to_move_ts))) {
+						// Migrate to_move_ts from max_rq to min_rq
+						dequeue_task_wrr(max_rq, to_move_ts, 0);
+						set_task_cpu(to_move_ts, min_cpu);
+						enqueue_task_wrr(min_rq, to_move_ts, 0);
+						endflag = 1;
+						break;
+					}
+				}
+			}
+			double_rq_unlock(min_rq, max_rq);
+		}
+		wrr_next_balance = jiffies + 2 * HZ;
+	}
+	spin_unlock(&wrr_lb_lock);
+}
+#endif
