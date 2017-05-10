@@ -145,10 +145,16 @@ static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 	if (!p->on_rq)
 		return;
 	/*
-	 * We were most likely switched from sched_rt, so
-	 * kick off the schedule if running, otherwise just see
-	 * if we can still preempt the current task.
+	 * Case 1: rt -> wrr
+	 *  1): curr is RT: Do nothing.
+	 *  2): curr is WRR: Reschedule.
+	 *  3): curr is CFS: Impossible.
+	 * Case 2: cfs -> wrr
+	 *  1): curr is RT: Do nothing.
+	 *  2): curr is WRR: Do nothing.
+	 *  3): curr is CFS: Preempt!
 	 */
+
 	if (rq->curr == p)
 		resched_task(rq->curr);
 	else
