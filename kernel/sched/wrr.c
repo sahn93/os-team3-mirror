@@ -155,6 +155,17 @@ static void switched_to_wrr(struct rq *rq, struct task_struct *p)
 		check_preempt_curr(rq, p, 0);
 }
 
+/*
+ * Preempt the current task with a newly woken task if needed:
+ */
+static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
+{
+	if (rq->curr.sched_class == &fair_sched_class) {
+		resched_task(rq->curr);
+		return;
+	}
+}
+
 const struct sched_class wrr_sched_class = {
 	.next				= &fair_sched_class,
 	.enqueue_task		= enqueue_task_wrr,
@@ -162,6 +173,8 @@ const struct sched_class wrr_sched_class = {
 	.yield_task			= yield_task_wrr,
 	.pick_next_task		= pick_next_task_wrr,
 	.put_prev_task		= put_prev_task_wrr,
+
+	.check_preempt_curr	= check_preempt_wakeup,
 
 #ifdef CONFIG_SMP
 	.select_task_rq		= select_task_rq_wrr,
