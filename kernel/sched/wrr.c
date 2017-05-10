@@ -35,7 +35,7 @@ static void update_curr_wrr(struct rq *rq) {
 	if (unlikely((s64)delta_exec <= 0))
 		return;
 
-	schedstat_set(curr->statistics.exec_max,
+	schedstat_set(curr->se.statistics.exec_max,
 			  max(delta_exec, curr->se.statistics.exec_max));
 
 	curr->se.sum_exec_runtime += delta_exec;
@@ -199,6 +199,7 @@ void trigger_wrr_load_balance() {
 
 			double_rq_lock(min_rq, max_rq);
 			max_movable_w = min_wsum + (max_wsum - min_wsum) / 2;
+			max_movable_w = (max_movable_w > 20 ? 20 : max_movable_w);
 
 			// Search movable task from highest weight queue
 			for (i = max_movable_w; !endflag && i >= 1; i--) {
