@@ -171,7 +171,7 @@ static void switched_to_wrr(struct rq *rq, struct task_struct *p)
  */
 static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 {
-	if (rq->curr.sched_class == &fair_sched_class) {
+	if (rq->curr->sched_class == &fair_sched_class) {
 		resched_task(rq->curr);
 		return;
 	}
@@ -193,7 +193,7 @@ extern void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq);
 
 void print_wrr_stats(struct seq_file *m, int cpu)
 {
-	struct wrr_rq *wrr_rq;
+	struct wrr_rq *wrr_rq = &cpu_rq(cpu)->wrr;
 	rcu_read_lock();
 	print_wrr_rq(m, cpu, wrr_rq);
 	rcu_read_unlock();
