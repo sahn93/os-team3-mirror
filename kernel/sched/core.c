@@ -1717,7 +1717,9 @@ void sched_fork(struct task_struct *p)
 		p->sched_reset_on_fork = 0;
 	}
 
-	if (!rt_prio(p->prio))
+	if (p->policy == SCHED_WRR)
+		p->sched_class = &wrr_sched_class;
+	else if (!rt_prio(p->prio))
 		p->sched_class = &fair_sched_class;
 
 	if (p->sched_class->task_fork)
@@ -3658,7 +3660,9 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
 	if (running)
 		p->sched_class->put_prev_task(rq, p);
 
-	if (rt_prio(prio))
+	if (p->policy == SCHED_WRR)
+		p->sched_class = &wrr_sched_class;
+	else if (rt_prio(prio))
 		p->sched_class = &rt_sched_class;
 	else
 		p->sched_class = &fair_sched_class;
@@ -3852,14 +3856,8 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 	p->normal_prio = normal_prio(p);
 	/* we are holding p->pi_lock already */
 	p->prio = rt_mutex_getprio(p);
-	if (rt_prio(p->prio)) {
-		p->sched_class = &rt_sched_class;
-#ifdef CONFIG_SCHED_HMP
-		if (cpumask_equal(&p->cpus_allowed, cpu_all_mask))
-			do_set_cpus_allowed(p, &hmp_slow_cpu_mask);
-#endif
-	}
-	else if (policy == SCHED_WRR) {
+
+	if (policy == SCHED_WRR) {
 		p->sched_class = &wrr_sched_class;
 		INIT_LIST_HEAD(&p->wrr.run_list);
 #ifdef CONFIG_SMP
@@ -3867,7 +3865,14 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 #endif
 		p->wrr.weight = 10;
 		p->wrr.time_slice = HZ / 10;
-		p->wrr.time_left = 0;
+		p->wrr.time_left = HZ / 10;
+	}
+	else if (rt_prio(p->prio)) {
+		p->sched_class = &rt_sched_class;
+#ifdef CONFIG_SCHED_HMP
+		if (cpumask_equal(&p->cpus_allowed, cpu_all_mask))
+			do_set_cpus_allowed(p, &hmp_slow_cpu_mask);
+#endif
 	}
 	else
 		p->sched_class = &fair_sched_class;
@@ -7123,7 +7128,7 @@ void __init sched_init(void)
 	/*
 	 * During early bootup we pretend to be a normal task:
 	 */
-	current->sched_class = &fair_sched_class;
+	current->sched_class = &wrr_sched_class;
 
 #ifdef CONFIG_SMP
 	zalloc_cpumask_var(&sched_domains_tmpmask, GFP_NOWAIT);
