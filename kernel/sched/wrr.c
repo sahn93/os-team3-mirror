@@ -185,7 +185,7 @@ prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)
 
 static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)
 {
-	
+	return task->wrr.time_left;
 }
 
 #ifdef CONFIG_SCHED_DEBUG
