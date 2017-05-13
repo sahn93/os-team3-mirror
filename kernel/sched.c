@@ -46,9 +46,12 @@ asmlinkage int sys_sched_setweight(pid_t pid, int weight) {
 	}
 
 	if (wrr_se->weight != weight) {
+#ifdef CONFIG_SMP
+		rq->wrr.wrr_total_weight += (weight - wrr_se->weight);
+		list_move(&wrr_se->weight_list, &rq->wrr.active.queue[weight-1]);
+#endif
 		wrr_se->weight = weight;
 		wrr_se->time_slice = weight * HZ / 100;
-		list_move(&wrr_se->weight_list, &rq->wrr.active.queue[weight-1]);
 	}
 	raw_spin_unlock(&rq->lock);
 	return 0;
