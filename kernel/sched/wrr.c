@@ -146,6 +146,10 @@ static void task_tick_wrr(struct rq *rq, struct task_struct *p, int queued) {
 	set_tsk_need_resched(p);
 }
 
+static void task_fork_wrr(struct task_struct *p) {
+	p->wrr.time_left = p->wrr.time_slice;
+}
+
 /*
  * We switched to the sched_wrr class.
  */
@@ -219,6 +223,7 @@ const struct sched_class wrr_sched_class = {
 #endif
 	.set_curr_task		= set_curr_task_wrr,
 	.task_tick			= task_tick_wrr,
+	.task_fork			= task_fork_wrr,
 
 	.prio_changed 		= prio_changed_wrr,
 	.switched_to 		= switched_to_wrr,
