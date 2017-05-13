@@ -276,7 +276,7 @@ void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq)
 		SEQ_printf(m, "%-30s: %d\n","weight", i+1);
 		list_for_each_entry(curr, &wrr_rq->active.queue[i], weight_list) {
 			SEQ_printf(m, "\t%-30s: %d\n", "time_slice", curr->time_slice);
-			SEQ_printf(m, "\t%-30s: %d\n", "time_left", curr->time_left);
+			SEQ_printf(m, "\t%-30s: %d\n\n", "time_left", curr->time_left);
 		}
 	}
 
@@ -285,7 +285,7 @@ void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq)
 	list_for_each_entry(curr, &wrr_rq->rq, run_list){
 		SEQ_printf(m, "\t%-30s: %d\n", "weight", curr->weight);
 		SEQ_printf(m, "\t%-30s: %d\n", "time_slice", curr->time_slice);
-		SEQ_printf(m, "\t%-30s: %d\n", "time_left", curr->time_left);
+		SEQ_printf(m, "\t%-30s: %d\n\n", "time_left", curr->time_left);
 	}
 	
 	return;
