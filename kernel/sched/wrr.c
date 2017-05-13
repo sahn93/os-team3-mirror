@@ -56,6 +56,8 @@ static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	list_add(&wrr_se->weight_list, wq);
 	rq->wrr.wrr_total_weight += wrr_se->weight;
 #endif
+
+	inc_nr_running(rq);
 }
 
 static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
@@ -66,6 +68,8 @@ static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags) {
 	list_del_init(&wrr_se->weight_list);
 	rq->wrr.wrr_total_weight -= wrr_se->weight;
 #endif
+	
+	dec_nr_running(rq);
 }
 
 static void yield_task_wrr(struct rq *rq) {
