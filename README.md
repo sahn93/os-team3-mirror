@@ -36,8 +36,7 @@ In WRR policy, the execution time of a process will gets longer as its weight de
 
 We added `wrr_rq` struct in the struct `rq` along with `cfs_rq` and `rt_rq`. We added an integer variable named `wrr_total_weight` in `wrr_rq` struct which stores the sum of every tasks' weight in that `wrr_rq`. With `wrr_total_weight`, we can glance the weight without iterating all elements in `wrr_rq` when load balancing. 
 Also, we added `active` array which consists of twenty `list_head`s which is head of `weight_list`. 
-The very first element in `wrr_rq` is currently running task and the other elements are waiting. 
-When the clock ticks, we decreases `time_left`. If `time_left==0`, we give another `time_slice` to the task and move it to the back of queue as the policy is round robin.
+
 We detailed further explanation in following Implementation section. 
 
 ## Implementation
@@ -77,39 +76,39 @@ struct sched_wrr_entity {
 
 We added several functions for WRR scheduling. 
 
-* `void init_wrr_rq(struct wrr_rq *wrr_rq)` initializes `wrr_rq`.
+* `void init_wrr_rq(struct wrr_rq *wrr_rq)`: Initializes `wrr_rq`.
 
-* `static void update_curr_wrr(struct rq *rq)` 
+* `static void update_curr_wrr(struct rq *rq)`: Updates run queue statistics such as execution time.
 
-* `static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)` enqueues given `task_sturct` to `rq`'s wrr run queue. If `CONFIG_SMP`, it also enqueues given `task_struct` to corresponding wrr weight queue and updates wrr run queue's total weight. 
+* `static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)`: enqueues given `task_sturct` to `rq`'s wrr run queue. If `CONFIG_SMP`, it also enqueues given `task_struct` to corresponding wrr weight queue and updates wrr run queue's total weight. 
 
-* `static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)` dequeues given `task_struct` from `rq`'s wrr run queue. If `CONFIG_SMP`, it also dequeues given `task_struct` from corresponding wrr weight queue. If `CONFIG_SMP`, it also dequeues given `task_struct` from corresponding wrr weight queue and updates wrr run queue's total weight.
+* `static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)`: dequeues given `task_struct` from `rq`'s wrr run queue. If `CONFIG_SMP`, it also dequeues given `task_struct` from corresponding wrr weight queue. If `CONFIG_SMP`, it also dequeues given `task_struct` from corresponding wrr weight queue and updates wrr run queue's total weight.
 
-* `static void yield_task_wrr(struct rq *rq)` moves the first task in the `wrr_rq` to the rear end so that the second one have eligibility to run.
+* `static void yield_task_wrr(struct rq *rq)`: moves the first task in the `wrr_rq` to the rear end so that the second one have eligibility to run.
 
-* `static struct task_struct *pick_next_task_wrr(struct rq *rq)` returns the second task in the `wrr_rq`. If `wrr_rq` is empty or has only one task, returns 0.
+* `static struct task_struct *pick_next_task_wrr(struct rq *rq)`: returns the second task in the `wrr_rq`. If `wrr_rq` is empty or has only one task, returns 0.
 
-* `static void put_prev_task_wrr(struct rq *rq, struct task_struct *p)`
+* `static void put_prev_task_wrr(struct rq *rq, struct task_struct *p)`: We have nothing to do with this function.
 
-* `static int select_task_rq_wrr(struct task_struct *p, int sd_flag, int flags)`
+* `static int select_task_rq_wrr(struct task_struct *p, int sd_flag, int flags)`: Select cpu the task should be switched to.
 
-* `static void set_curr_task_wrr(struct rq *rq)`
+* `static void set_curr_task_wrr(struct rq *rq)`: Set start time for current task.
 
-* `static void task_tick_wrr(struct rq *rq, struct task_struct *p, int queued)`
+* `static void task_tick_wrr(struct rq *rq, struct task_struct *p, int queued)`: Updates remaining time slice for current task.
 
-* `static void task_fork_wrr(struct task_struct *p)`
+* `static void task_fork_wrr(struct task_struct *p)`: Initialize left time as time slice.
 
-* `static void switched_to_wrr(struct rq *rq, struct task_struct *p)`
+* `static void switched_to_wrr(struct rq *rq, struct task_struct *p)`: Reschedule when a only rq task switched to wrr and preempt when a cfs task switched to wrr and curr task is in cfs.
 
-* `static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)`
+* `static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)`: Preempt the current task with a newly woken task if needed.
 
-* `static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)`
+* `static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)`: This function is empty, since WRR have nothing to do with prio.
 
-* `static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)`
+* `static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)`: Returns a task's remaining time slice.
 
-* `void print_wrr_stats(struct seq_file *m, int cpu)`
+* `void print_wrr_stats(struct seq_file *m, int cpu)`: Prints out current state of wrr_rq in a cpu.
 
-* `void trigger_wrr_load_balance()`
+* `void trigger_wrr_load_balance()`: move a task from the most weighted core to the least weighted core.
 
 
 
