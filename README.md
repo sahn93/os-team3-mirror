@@ -41,7 +41,7 @@ struct wrr_rq {
   };
 ```
 
-Also, we add `sched_wrr_entity` struct in `task_struct`. This struct forms two linked lists.
+Also, we added `sched_wrr_entity` struct in `task_struct`. This struct forms two linked lists, `run_list` and `weight_list`. 
 
 
 ```c
@@ -55,7 +55,44 @@ struct sched_wrr_entity {
   unsigned int time_left;
 };
 ```
+
 ### 2. Functions
+
+We added several functions for WRR scheduling. 
+
+* `void init_wrr_rq(struct wrr_rq *wrr_rq)`
+
+* `static void update_curr_wrr(struct rq *rq)`
+
+* `static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)`
+
+* `static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)`
+
+* `static void yield_task_wrr(struct rq *rq)`
+
+* `static struct task_struct *pick_next_task_wrr(struct rq *rq)`
+
+* `static void put_prev_task_wrr(struct rq *rq, struct task_struct *p)`
+
+* `static int select_task_rq_wrr(struct task_struct *p, int sd_flag, int flags)`
+
+* `static void set_curr_task_wrr(struct rq *rq)`
+
+* `static void task_tick_wrr(struct rq *rq, struct task_struct *p, int queued)`
+
+* `static void task_fork_wrr(struct task_struct *p)`
+
+* `static void switched_to_wrr(struct rq *rq, struct task_struct *p)`
+
+* `static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)`
+
+* `static void prio_changed_wrr(struct rq *rq, struct task_struct *p, int oldprio)`
+
+* `static unsigned int get_rr_interval_wrr(struct rq *rq, struct task_struct *task)`
+
+* `void print_wrr_stats(struct seq_file *m, int cpu)`
+
+* `void trigger_wrr_load_balance()`
 
 
 
