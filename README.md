@@ -127,9 +127,20 @@ We added several functions for WRR scheduling.
 
 * `void trigger_wrr_load_balance()`: move a task from the most weighted core to the least weighted core.
 
+There are two `trigger_wrr_load_balance()` functions. 
+First one in `#ifndef CONFIG_WRR_RETRY_MIN` block is the function regarding to original load balancing policy. 
+We used `jiffies` to check whether it is time for load balancing or not.
+In order to pick a task to migrate from MAX_CPU to MIN_CPU, we calculated `max_movable_w`, the maximum movable weight. And then we searched from queue[max_movable_w], and try next biggest weight queue, and so on.
+
+Another one in `#else` block is the function regarding to our improved load balancing policy.
+We first sort CPUs in ascending order with their weight sums, and try to migrate a task until it is succeeded. The rest parts are the same as former `trigger_wrr_load_balance()`.
 
 
 ## How to build kernel & Test
+### Activate our improved load balancing policy
+1. To use our load balancing policy, define `CONFIG_WRR_RETRY_MIN` in `kernel/sched/wrr.c`, line 234.
+2. To use original policy, comment out that line.
+
 ### Build & flash kernel
 1. Type `build` on the root directory to build kernel.
 2. Type `flash` to upload kernel to the ARTIK.
