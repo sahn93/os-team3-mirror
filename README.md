@@ -27,6 +27,7 @@ In WRR policy, the execution time of a process will gets longer as its weight de
 We added `wrr_rq` struct in the struct `rq` along with `cfs_rq` and `rt_rq`. We added an integer variable named `wrr_total_weight` in `wrr_rq` struct which stores the sum of every tasks' weight in that `wrr_rq`. With `wrr_total_weight`, we can glance the weight without iterating all elements in `wrr_rq` when load balancing. 
 Also, we added `active` array which consists of twenty `list_head`s which is head of `weight_list`. 
 
+
 We detailed further explanation in following Implementation section. 
 
 ## Implementation
@@ -126,4 +127,4 @@ hit `./exetime_per_weight.sh ./fork16 ./trial` on the home directory.
 hit `./exetime_per_procnum.sh ./fork16 ./trial` on the home directory.
 
 ## What we have learned
-Most of all, we learned how to hack the linux scheduler. Now we know how to implement a new scheduler class and a run queue that follow a brand new policy. We also learned some useful debugging and testing skills. 
+Most of all, we learned how to hack the linux scheduler. Now we know how to implement a new scheduler class and a run queue that follow a brand new policy. We also learned some useful debugging and testing skills. We have read much of `core.c`, `rt.c` and `fair.c` and we come to be familiar with reading long kernel codes.
