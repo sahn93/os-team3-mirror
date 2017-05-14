@@ -17,14 +17,10 @@ function ctrl_c() {
 sleep 1
 echo "Executed 16 inf loops!"
 echo "Prime factorize 179424691 from 1 to 15 by step 2"
-./trial 179424691 1
-./trial 179424691 3
-./trial 179424691 5
-./trial 179424691 7
-./trial 179424691 9
-./trial 179424691 11
-./trial 179424691 13
-./trial 179424691 15
+for i in {1..15..2}
+do
+    echo "called weight $i"
+    ./trial 179424691 $i&
+done
 
-echo "finish!"
 killall ./fork16
