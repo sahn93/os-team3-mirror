@@ -231,7 +231,10 @@ const struct sched_class wrr_sched_class = {
 	.get_rr_interval	= get_rr_interval_wrr
 };
 
+#define CONFIG_WRR_RETRY_MIN
+
 #ifdef CONFIG_SMP
+#ifndef CONFIG_WRR_RETRY_MIN
 void trigger_wrr_load_balance() {
 	struct rq *rq, *min_rq, *max_rq;
 	struct sched_wrr_entity *wrr_se;
@@ -271,7 +274,7 @@ void trigger_wrr_load_balance() {
 			max_rq = cpu_rq(max_cpu);
 
 			double_rq_lock(min_rq, max_rq);
-			max_movable_w = min_wsum + (max_wsum - min_wsum) / 2;
+			max_movable_w = (max_wsum - min_wsum) / 2;
 			max_movable_w = (max_movable_w > 20 ? 20 : max_movable_w);
 
 			// Search movable task from highest weight queue
@@ -298,4 +301,83 @@ void trigger_wrr_load_balance() {
 	}
 	spin_unlock(&wrr_lb_lock);
 }
+#else
+void trigger_wrr_load_balance() {
+	struct rq *rq, *min_rq, *max_rq;
+	struct sched_wrr_entity *wrr_se;
+	struct task_struct *to_move_ts;
+	int max_cpu = 1, max_wsum = -1, curr_wsum;
+	int min_cpus[NR_CPUS], nr_cpus = 0, min_w[NR_CPUS];
+	int max_movable_w;
+	int i, j, endflag = 0;
+
+	// If there's only one working cpu, just ignore load balancing
+	if (num_online_cpus() <= 1)
+		return;
+
+	spin_lock(&wrr_lb_lock);
+
+	// Check whether it's time for load balancing or not.
+	if (time_after_eq(jiffies, wrr_next_balance)) {
+		rcu_read_lock();
+
+		// Find the maximum-weighted cpu and minimum-weighted cpu.
+		for_each_cpu(i, cpu_online_mask) {
+			rq = cpu_rq(i);
+			curr_wsum = rq->wrr.wrr_total_weight;
+			for (j = nr_cpus-1; j >= 0; j--) {
+				if (min_w[j] > curr_wsum) {
+					min_w[j+1] = min_w[j];
+					min_cpus[j+1] = min_cpus[j];
+				}
+				else
+					break;
+			}
+			min_w[j+1] = curr_wsum;
+			min_cpus[j+1] = i;
+			nr_cpus++;
+
+			if (curr_wsum > max_wsum) {
+				max_wsum = curr_wsum;
+				max_cpu = i;
+			}
+		}
+		rcu_read_unlock();
+
+		for (j = 0; !endflag && j < nr_cpus; j++) {
+			if (min_w[j] == max_wsum)
+				break;
+
+			min_rq = cpu_rq(min_cpus[j]);
+			max_rq = cpu_rq(max_cpu);
+
+			double_rq_lock(min_rq, max_rq);
+			max_movable_w = (max_wsum - min_w[j]) / 2;
+			max_movable_w = (max_movable_w > 20 ? 20 : max_movable_w);
+
+			// Search movable task from highest weight queue
+			for (i = max_movable_w; !endflag && i >= 1; i--) {
+				list_for_each_entry(wrr_se, &max_rq->wrr.active.queue[i-1], weight_list) {
+					to_move_ts = container_of(wrr_se, struct task_struct, wrr);
+
+					// 1. If task is not currently running, and
+					// 2. if the task can be migrated to min_cpu
+					if ((to_move_ts != max_rq->curr)
+							&& cpumask_test_cpu(min_cpus[j], tsk_cpus_allowed(to_move_ts))) {
+						// Migrate to_move_ts from max_rq to min_rq
+						dequeue_task_wrr(max_rq, to_move_ts, 0);
+						set_task_cpu(to_move_ts, min_cpus[j]);
+						enqueue_task_wrr(min_rq, to_move_ts, 0);
+						endflag = 1;
+						break;
+					}
+				}
+			}
+			double_rq_unlock(min_rq, max_rq);
+		}
+		wrr_next_balance = jiffies + 2 * HZ;
+	}
+	spin_unlock(&wrr_lb_lock);
+}
+#endif
 #endif
