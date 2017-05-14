@@ -2,8 +2,20 @@
 
 In this project, we will build our own CPU scheduler in the Tizen Linux kernel. Then, we test the scheduler with the ARTIK device.
 
+This project consists of 3 parts: implementing, testing, and improving WRR scheduler. 
 
+### 1. Implementing WRR Scheduler
+* The WRR scheduling policy 
+
+### 2. Testing WRR Scheduler
+
+### 3. Improving WRR Scheduler
+* 
 ## Policies
+
+### 1. Policies from original specs
+
+### 2. Additional Policy
 
 
 ## High-level design
@@ -14,7 +26,35 @@ In this project, we will build our own CPU scheduler in the Tizen Linux kernel. 
 
 ### 1. Data Structure
 
+First, we made `wrr_rq` struct as below. This struct is included in the struct `rq` with `cfs_rq` and `rt_rq`.
 
+```c
+struct wrr_rq {
+  struct list_head rq;
+
+#ifdef CONFIG_SMP
+  struct wrr_prio_array active;
+  unsigned int wrr_total_weight;
+#endif
+
+  raw_spinlock_t wrr_runtime_lock;
+  };
+```
+
+Also, we add `sched_wrr_entity` struct in `task_struct`. This struct forms two linked lists.
+
+
+```c
+struct sched_wrr_entity {
+  struct list_head run_list;
+#ifdef CONFIG_SMP
+  struct list_head weight_list;
+#endif
+  unsigned int weight;
+  unsigned int time_slice;
+  unsigned int time_left;
+};
+```
 ### 2. Functions
 
 
