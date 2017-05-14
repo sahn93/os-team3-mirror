@@ -267,8 +267,10 @@ void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq)
 {
 	struct sched_wrr_entity *curr;
 	int i;
+	struct rq *rq = cpu_rq(cpu);
+
 	SEQ_printf(m, "\nwrr_rq[%d]:\n", cpu);
-	
+	raw_spin_lock(&rq->lock);
 #ifdef CONFIG_SMP
 	SEQ_printf(m, " .%-30s: %u\n", "wrr_total_weight", wrr_rq->wrr_total_weight);
 
@@ -287,7 +289,7 @@ void print_wrr_rq(struct seq_file *m, int cpu, struct wrr_rq *wrr_rq)
 		SEQ_printf(m, "\t%-30s: %u\n", "time_slice", curr->time_slice);
 		SEQ_printf(m, "\t%-30s: %u\n\n", "time_left", curr->time_left);
 	}
-	
+	raw_spin_unlock(&rq->lock);
 	return;
 }
 
