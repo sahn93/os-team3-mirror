@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	n = atoi(argv[1]);
 	weight = atoi(argv[2]);
 	t1 = clock();
-//	sys_ret = syscall(__NR_sched_setweight, 0, weight);
+	sys_ret = syscall(__NR_sched_setweight, 0, weight);
 	if(n<=1){
 		printf("\nInvalid input.\nProgram terminated.\n");
 		return -1;
