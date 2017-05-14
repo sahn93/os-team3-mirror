@@ -5,15 +5,20 @@ In this project, we will build our own CPU scheduler in the Tizen Linux kernel. 
 This project consists of 3 parts: implementing, testing, and improving WRR scheduler. 
 
 ### 1. Implementing WRR Scheduler
-* The WRR scheduling policy 
+* Each task has its weight ranging from 1 to 20.
+* Each task has its time slice with its `weight * 10ms`.
+* Each task is assigned to the CPU which has the smallest weight sum.
+* If there exists a task in maximum weight CPU such that it could be moved to the minimum weight CPU without reversing the two CPU weights' order, it should be moved to minimum weight CPU. This load balancing should be executed every 2000ms.
 
 ### 2. Testing WRR Scheduler
 
 ### 3. Improving WRR Scheduler
-* 
+*
+
 ## Policies
 
 ### 1. Policies from original specs
+
 
 ### 2. Additional Policy
 
