@@ -5,10 +5,13 @@ In this project, we will build our own CPU scheduler in the Tizen Linux kernel. 
 This project consists of 3 parts: implementing, testing, and improving WRR scheduler. 
 
 ### 1. Implementing WRR Scheduler
-* The WRR scheduling policy 
+* The WRR scheduling policy
 
 ### 2. Testing WRR Scheduler
+1. Measuring execution time of a process according to its weight.
+2. Measuring execution time of a process according to # of other processes on the cpu.
 
+In WRR policy, the execution time of a process will gets longer as its weight decreases and # of processes in the same core increses.
 
 
 ### 3. Improving WRR Scheduler
