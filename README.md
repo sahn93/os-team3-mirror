@@ -124,4 +124,4 @@ hit `./exetime_per_weight.sh ./fork16 ./trial` on the home directory.
 hit `./exetime_per_procnum.sh ./fork16 ./trial` on the home directory.
 
 ## What we have learned
-
+Most of all, we learned how to hack the linux scheduler. Now we know how to implement a new scheduler class and a run queue that follow a brand new policy. We also learned some useful debugging and testing skills. 
