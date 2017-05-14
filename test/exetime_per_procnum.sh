@@ -19,7 +19,7 @@ do
     echo "./trial with ./fork16 $i times..."
     # ./fork16&
     ./fork16& 
-    sleep 1
+    sleep 3
     # ./trial
     ./trial 179424691 10
 done
