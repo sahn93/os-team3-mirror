@@ -30,7 +30,24 @@ In WRR policy, the execution time of a process will gets longer as its weight de
 
 
 ### 3. Improving WRR Scheduler
-* 
+In order to improve the performance of original WRR scheduler, we focused on load balancing and tried to improve it. 
+The key concept of our improved load balancing is **Retry migration with different MIN_CPU on failure**. 
+Pseudo code of our load balancing is following:
+
+```
+Sort active CPUs in ascending order with their weight sums, store the result in MIN_CPUS[];
+MAX_CPU <- MIN_CPUS[NR_CPUS-1];
+for (i = 0; i < NR_CPUS-1; i++) {
+    MIN_CPU <- MIN_CPUS[i];
+    
+    if (there exists a movable task from MAX_CPU to MIN_CPU) {
+        Migrate the task from MAX_CPU to MIN_CPU;
+        break;
+    }
+}
+```
+
+Previous load balancing policy offers only one change to pick MIN_CPU and MAX_CPU, but our policy gives MAX_CPU more chances to push its workload to other CPU. Therefore, our policy minimizes the maximum weight among every CPUs.
 
 ## High-level design
 
