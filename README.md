@@ -5,20 +5,17 @@ In this project, we will build our own CPU scheduler in the Tizen Linux kernel. 
 This project consists of 3 parts: implementing, testing, and improving WRR scheduler. 
 
 ### 1. Implementing WRR Scheduler
-* Each task has its weight ranging from 1 to 20.
-* Each task has its time slice with its `weight * 10ms`.
-* Each task is assigned to the CPU which has the smallest weight sum.
-* If there exists a task in maximum weight CPU such that it could be moved to the minimum weight CPU without reversing the two CPU weights' order, it should be moved to minimum weight CPU. This load balancing should be executed every 2000ms.
+* The WRR scheduling policy 
 
 ### 2. Testing WRR Scheduler
 
-### 3. Improving WRR Scheduler
-*
 
+
+### 3. Improving WRR Scheduler
+* 
 ## Policies
 
 ### 1. Policies from original specs
-
 
 ### 2. Additional Policy
 
@@ -111,7 +108,17 @@ We added several functions for WRR scheduling.
 3. Type `push <source> <destination>` to send a file to Artik.
 
 ### Run the test
+Test consists of 4 files.
+* `fork16`: Starts 16 very long identical tasks.
+* `trial`: Run prime factorization as specific weight.
+* `exetime_per_weight.sh`: Executes `fork16` to activate every cores and executes `trial` as weight 20 to 1 consecutively.
+* `exetime_per_procnum.sh`: Executes `trial` 4 times with each 16, 32, 48, 64 tasks on cores.
 
+#### Execution time according to weight change
+hit `./exetime_per_weight.sh ./fork16 ./trial` on the home directory.
+
+#### Execution time according to # of processes
+hit `./exetime_per_procnum.sh ./fork16 ./trial` on the home directory.
 
 ## What we have learned
 
