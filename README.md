@@ -8,6 +8,7 @@ This project consists of 3 parts: implementing, testing, and improving WRR sched
 * The WRR scheduling policy
 
 ### 2. Testing WRR Scheduler
+WRR Scheduler test consissts of 2 parts.
 1. Measuring execution time of a process according to its weight.
 2. Measuring execution time of a process according to # of other processes on the cpu.
 
