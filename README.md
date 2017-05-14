@@ -6,10 +6,20 @@ This project consists of 3 parts: implementing, testing, and improving WRR sched
 
 
 ### 1. Implementing WRR Scheduler
+#### Policies
 * Each task has its weight ranging from 1 to 20.
 * Each task has its time slice with its `weight * 10ms`.
 * Each task is assigned to the CPU which has the smallest weight sum.
 * If there exists a task in maximum weight CPU such that it could be moved to the minimum weight CPU without reversing the two CPU weights' order, it should be moved to minimum weight CPU. This load balancing should be executed every 2000ms.
+
+#### `wrr_rq`
+We made a run queue for wrr scheduler. this run queue consists of a circular list of tasks and an array of lists for each weight from 1 to 20.
+
+#### `sched_class_wrr`
+We declared `wrr_sched_class` that contains pointers for functions that are essential for a `sched_class` and implemented the functions.
+
+#### `trigger_wrr_load_balance()`
+We implemented this function to perform load balancing that moves a task from a wrr_rq with the highest weight sum to one with the lowest weight sum.
 
 ### 2. Testing WRR Scheduler
 WRR Scheduler test consissts of 2 parts.
@@ -26,7 +36,6 @@ In WRR policy, the execution time of a process will gets longer as its weight de
 
 We added `wrr_rq` struct in the struct `rq` along with `cfs_rq` and `rt_rq`. We added an integer variable named `wrr_total_weight` in `wrr_rq` struct which stores the sum of every tasks' weight in that `wrr_rq`. With `wrr_total_weight`, we can glance the weight without iterating all elements in `wrr_rq` when load balancing. 
 Also, we added `active` array which consists of twenty `list_head`s which is head of `weight_list`. 
-
 
 We detailed further explanation in following Implementation section. 
 
@@ -127,4 +136,4 @@ hit `./exetime_per_weight.sh ./fork16 ./trial` on the home directory.
 hit `./exetime_per_procnum.sh ./fork16 ./trial` on the home directory.
 
 ## What we have learned
-Most of all, we learned how to hack the linux scheduler. Now we know how to implement a new scheduler class and a run queue that follow a brand new policy. We also learned some useful debugging and testing skills. We have read much of `core.c`, `rt.c` and `fair.c` and we come to be familiar with reading long kernel codes.
+Most of all, we learned how to hack the linux scheduler. Now we know how to implement a new scheduler class and a run queue that follow a brand new policy. We also learned some useful debugging and testing skills. 
