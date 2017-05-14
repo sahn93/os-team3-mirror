@@ -21,7 +21,10 @@ do
     ./fork16& 
     sleep 3
     # ./trial
-    ./trial 179424691 10
+# 1400305337
+#    ./trial 1400305337 10
+#    ./trial 776531401 10
+    ./trial 275604541 10
 done
 
 echo "finish!"

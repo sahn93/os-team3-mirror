@@ -11,7 +11,7 @@ int is_prime(int n)
 	int i;
 	if(n<2)
 		return -1;
-	for(i=2;i<=46340 && i*i<=n;i++){
+	for(i=2;i<n;i++){
 		if(n%i==0)
 			return 0;
 	}
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	while(is_prime(n)!=1){
-		for(i=2;i<=46340 && i*i<=n;i++){
+		for(i=2;i<n;i++){
 			if(n%i==0 && is_prime(i)==1){
 				n = n/i;
 				printf("%d * ", i);
@@ -44,6 +44,6 @@ int main(int argc, char *argv[])
 	}
 	t2 = clock();
 	printf("%d\n", n);
-	printf("Elapsed time(s):\t%lf\tWeight:\t%d\n", (double)(t2-t1)/1000., weight);
+	printf("Elapsed time(s):\t%lf\tWeight:\t%d\n", (double)(t2-t1)/1000000., weight);
 	return 0;
 }		
