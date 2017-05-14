@@ -25,7 +25,9 @@ In WRR policy, the execution time of a process will gets longer as its weight de
 ## High-level design
 
 We added `wrr_rq` struct in the struct `rq` along with `cfs_rq` and `rt_rq`. We added an integer variable named `wrr_total_weight` in `wrr_rq` struct which stores the sum of every tasks' weight in that `wrr_rq`. With `wrr_total_weight`, we can glance the weight without iterating all elements in `wrr_rq` when load balancing. 
+Also, we added `active` array which consists of twenty `list_head`s which is head of `weight_list`. 
 
+We detailed further explanation in following Implementation section. 
 
 ## Implementation
 
@@ -46,7 +48,7 @@ struct wrr_rq {
 };
 ```
 
-Also, we added `sched_wrr_entity` struct in `task_struct`. Each entity has its `weight`, `time_slice` and `time_left`. This struct forms linked lists named `run_list` and `weight_list`. `weight_list` exists only if there are two or more cpus.
+Also, we added `sched_wrr_entity` struct in `task_struct`. Each entity has its `weight`, `time_slice` and `time_left`. This struct forms linked lists named `run_list` and `weight_list`. `weight_list` exists only if there are two or more CPUs.
 
 ```c
 struct sched_wrr_entity {
