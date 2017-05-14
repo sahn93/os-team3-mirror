@@ -30,29 +30,28 @@ First, we made `wrr_rq` struct as below. This struct is included in the struct `
 
 ```c
 struct wrr_rq {
-  struct list_head rq;
+    struct list_head rq;
 
 #ifdef CONFIG_SMP
-  struct wrr_prio_array active;
-  unsigned int wrr_total_weight;
+    struct wrr_prio_array active;
+    unsigned int wrr_total_weight;
 #endif
 
-  raw_spinlock_t wrr_runtime_lock;
-  };
+    raw_spinlock_t wrr_runtime_lock;
+};
 ```
 
-Also, we added `sched_wrr_entity` struct in `task_struct`. This struct forms two linked lists, `run_list` and `weight_list`. 
-
+Also, we added `sched_wrr_entity` struct in `task_struct`. Each entity has its `weight`, `time_slice` and `time_left`. This struct forms linked lists named `run_list` and `weight_list`. `weight_list` exists only if there are two or more cpus.
 
 ```c
 struct sched_wrr_entity {
-  struct list_head run_list;
+    struct list_head run_list;
 #ifdef CONFIG_SMP
-  struct list_head weight_list;
+    struct list_head weight_list;
 #endif
-  unsigned int weight;
-  unsigned int time_slice;
-  unsigned int time_left;
+    unsigned int weight;
+    unsigned int time_slice;
+    unsigned int time_left;
 };
 ```
 
@@ -60,17 +59,17 @@ struct sched_wrr_entity {
 
 We added several functions for WRR scheduling. 
 
-* `void init_wrr_rq(struct wrr_rq *wrr_rq)`
+* `void init_wrr_rq(struct wrr_rq *wrr_rq)` initializes `wrr_rq`.
 
-* `static void update_curr_wrr(struct rq *rq)`
+* `static void update_curr_wrr(struct rq *rq)` 
 
-* `static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)`
+* `static void enqueue_task_wrr(struct rq *rq, struct task_struct *p, int flags)` enqueues given `task_sturct` to `rq`'s wrr run queue. If `CONFIG_SMP`, it also enqueues given `task_struct` to corresponding wrr weight queue and updates wrr run queue's total weight. 
 
-* `static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)`
+* `static void dequeue_task_wrr(struct rq *rq, struct task_struct *p, int flags)` dequeues given `task_struct` from `rq`'s wrr run queue. If `CONFIG_SMP`, it also dequeues given `task_struct` from corresponding wrr weight queue. If `CONFIG_SMP`, it also dequeues given `task_struct` from corresponding wrr weight queue and updates wrr run queue's total weight.
 
-* `static void yield_task_wrr(struct rq *rq)`
+* `static void yield_task_wrr(struct rq *rq)` moves the first task in the `wrr_rq` to the rear end so that the second one have eligibility to run.
 
-* `static struct task_struct *pick_next_task_wrr(struct rq *rq)`
+* `static struct task_struct *pick_next_task_wrr(struct rq *rq)` returns the second task in the `wrr_rq`. If `wrr_rq` is empty or has only one task, returns 0.
 
 * `static void put_prev_task_wrr(struct rq *rq, struct task_struct *p)`
 
