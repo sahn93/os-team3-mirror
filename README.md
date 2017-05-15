@@ -49,6 +49,9 @@ for (i = 0; i < NR_CPUS-1; i++) {
 
 Previous load balancing policy offers only one change to pick MIN_CPU and MAX_CPU, but our policy gives MAX_CPU more chances to push its workload to other CPU. Therefore, our policy minimizes the maximum weight among every CPUs.
 
+Moreover, Our new policy works well for workloads using CPU affinity (e.g. `taskset` in linux). For example, assume there are some tasks in CPU 0 and 1, which are only allowed to run on CPU 0 and 1. Also assume that CPU 0 has maximum weight sum, and there is no tasks in CPU 2 ~ 7. Since original policy pick a MIN_CPU among CPU 2 ~ 7, there is no chance for load balancing from CPU 0 to CPU 1, even though there might be some tasks could migrate. On the contrary, our new policy tries every CPU (2~7) and then select CPU 1 as MIN_CPU. So it can achieve load balance between CPU 0 and CPU 1.
+
+
 ## High-level design
 
 We added `wrr_rq` struct in the struct `rq` along with `cfs_rq` and `rt_rq`. We added an integer variable named `wrr_total_weight` in `wrr_rq` struct which stores the sum of every tasks' weight in that `wrr_rq`. With `wrr_total_weight`, we can glance the weight without iterating all elements in `wrr_rq` when load balancing. 
