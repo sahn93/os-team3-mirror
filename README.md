@@ -154,7 +154,9 @@ We first sort CPUs in ascending order with their weight sums, and try to migrate
 3. Type `push <source> <destination>` to send a file to Artik.
 
 ### Run the test
-Test consists of 4 files.
+
+#### WRR Scheduler test
+This test consists of 4 files.
 * `fork16`: Starts 16 very long identical tasks.
 * `trial`: Run prime factorization as specific weight.
 * `exetime_per_weight.sh`: Executes `fork16` to activate every cores and executes `trial` as weight 20 to 1 consecutively.
@@ -165,6 +167,19 @@ hit `./exetime_per_weight.sh ./fork16 ./trial` on the home directory.
 
 #### Execution time according to # of processes
 hit `./exetime_per_procnum.sh ./fork16 ./trial` on the home directory.
+
+#### System call permission test
+There are 2 system calls about WRR, that are `get_wrr_weight`, and `set_wrr_weight`.
+`get_wrr_weight` is permitted for every users, but `set_wrr_weight` is restricted to the task owner, and a user can only decrease a task's weight. However, root can do anything.
+
+This test consists of 3 files.
+* `setweight`: Take PID and weight, and set the task's wrr weight.
+* `getweight`: Take PID and take wrr weight of the task.
+* `infloop`: A permanent task.
+
+First, change current user by typing `su <username>`. There are some default users such as `alice`, `bob`.
+Then, run `./infloop`. you can see current running processes and their pid by typing `ps -ef`.
+Test whether our system call works correctly. You can `getweight` for every processes, but you can't increase wrr or change other user's processes with `setweigh`. Only `root` can do freely.
 
 ## What we have learned
 Most of all, we learned how to hack the linux scheduler. Now we know how to implement a new scheduler class and a run queue that follow a brand new policy. We also learned some useful debugging and testing skills. 
