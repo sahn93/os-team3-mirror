@@ -17,7 +17,7 @@ function ctrl_c() {
 sleep 3
 echo "Executed 16 inf loops!"
 #echo "Prime factorize 179424691 from 1 to 15 by step 2"
-for i in `seq 15 -2 1`
+for i in `seq 20 -1 1`
 do
     echo "called weight $i"
 #    ./trial 15485863 $i
