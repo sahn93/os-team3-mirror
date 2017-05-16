@@ -28,12 +28,20 @@ asmlinkage int sys_sched_setweight(pid_t pid, int weight) {
 	if (!ts)
 		return -EINVAL;
 
-	rq = task_rq(ts);
-	raw_spin_lock(&rq->lock);
+	for (;;) {
+		raw_spin_lock(&ts->pi_lock);
+		rq = task_rq(ts);
+		raw_spin_lock(&rq->lock);
+		if (likely(rq == task_rq(ts)))
+			break;
+		raw_spin_unlock(&rq->lock);
+		raw_spin_unlock(&ts->pi_lock);
+	}
 	wrr_se = &ts->wrr;
 
 	if (ts->policy != SCHED_WRR) {
 		raw_spin_unlock(&rq->lock);
+		raw_spin_unlock(&ts->pi_lock);
 		return -EINVAL;
 	}
 
@@ -41,6 +49,7 @@ asmlinkage int sys_sched_setweight(pid_t pid, int weight) {
 		if (!is_curr_task_owner(ts)
 				|| wrr_se->weight < weight) {
 			raw_spin_unlock(&rq->lock);
+			raw_spin_unlock(&ts->pi_lock);
 			return -EPERM;
 		}
 	}
@@ -54,6 +63,7 @@ asmlinkage int sys_sched_setweight(pid_t pid, int weight) {
 		wrr_se->time_slice = weight * HZ / 100;
 	}
 	raw_spin_unlock(&rq->lock);
+	raw_spin_unlock(&ts->pi_lock);
 	return 0;
 }
 
