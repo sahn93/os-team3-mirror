@@ -1,4 +1,5 @@
 #include <linux/gps.h>
+#include <linux/uaccess.h>
 #include <linux/gpscommon.h>
 #define FREETURN \
         do { \
@@ -38,13 +39,13 @@ asmlinkage int sys_set_gps_location(struct gps_location __user *loc) {
     if (kbuf->accuracy < 0)
         FREETURN; 
 
-    spin_lock(gps_lock);
+    spin_lock(&gps_lock);
         gpsloc.lat_integer = kbuf->lat_integer;
         gpsloc.lat_fractional = kbuf->lat_fractional;
         gpsloc.lng_integer = kbuf->lng_integer;
         gpsloc.lng_fractional = kbuf->lng_fractional;
         gpsloc.accuracy = kbuf->accuracy;
-    spin_unlock(gps_lock);
+    spin_unlock(&gps_lock);
 
     kfree(kbuf);
     return 0;
