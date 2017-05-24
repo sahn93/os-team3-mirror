@@ -99,3 +99,4 @@ modules.img
 zImage
 
 !.cmslab-os-project-root
+*.out
