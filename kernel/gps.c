@@ -2,7 +2,9 @@
 #include <linux/uaccess.h>
 #include <linux/gpscommon.h>
 
+DEFINE_SPINLOCK(gps_lock);
 struct gps_location gpsloc;
+
 asmlinkage int sys_set_gps_location(struct gps_location __user *loc) {
     
     struct gps_location *kbuf;

@@ -1,3 +1,6 @@
+#ifndef __GPS_H
+#define __GPS_H
+
 struct gps_location {
     int lat_integer;
     int lat_fractional;
@@ -5,3 +8,5 @@ struct gps_location {
     int lng_fractional;
     int accuracy;
 };
+
+#endif
