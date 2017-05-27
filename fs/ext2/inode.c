@@ -1567,6 +1567,8 @@ int ext2_setattr(struct dentry *dentry, struct iattr *iattr)
 	setattr_copy(inode, iattr);
 	if (iattr->ia_valid & ATTR_MODE)
 		error = ext2_acl_chmod(inode);
+    // Update gps location when a file is modified (content has changed).
+    ext2_set_gps_location(inode);
 	mark_inode_dirty(inode);
 
 	return error;
