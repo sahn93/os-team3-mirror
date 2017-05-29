@@ -50,7 +50,7 @@ asmlinkage int sys_set_gps_location(struct gps_location __user *loc) {
 asmlinkage int sys_get_gps_location(const char __user *pathname, struct gps_location __user *loc) {
 
 	char *kpathname;
-	int max_path_len = 1000, err;
+	int max_path_len = 200, err;
 	struct file *fp;
 	struct inode *finode;
 	struct gps_location *kloc;
