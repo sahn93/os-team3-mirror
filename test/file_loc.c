@@ -2,16 +2,21 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 #include "../include/linux/gps.h"
 
 int main(int argc, char *argv[]) {
 	struct gps_location gpsloc;
-	char path[200];
 	double lat, lng;
     int acc, err;
 
 	if (argc != 2) {
 		printf("Error : ./file_loc [file path]\n");
+		return -1;
+	}
+
+	if (strlen(argv[1]) >= 200) {
+		printf("Error : Too long file path\n");
 		return -1;
 	}
 
