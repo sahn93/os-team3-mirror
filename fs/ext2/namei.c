@@ -36,6 +36,7 @@
 #include "xattr.h"
 #include "acl.h"
 #include "xip.h"
+#include <linux/gpscommon.h>
 
 static inline int ext2_add_nondir(struct dentry *dentry, struct inode *inode)
 {
@@ -297,6 +298,46 @@ static int ext2_rmdir (struct inode * dir, struct dentry *dentry)
 		}
 	}
 	return err;
+}
+
+int gps_permission(struct inode *inode, int mask)
+{
+    struct ext2_inode_info *ei;
+    int lat_curr, lng_curr, lat_file, lng_file,  lat_diff, lng_diff;
+    long long d1, d2;
+    const int radius = 6378000; // Meteric unit
+    const int pi = 314;
+    ei =  EXT2_I(inode);
+
+    lat_curr = gpsloc.lat_integer*1000000 + gpsloc.lat_fractional;
+    lng_curr = gpsloc.lng_integer*1000000 + gpsloc.lng_fractional;
+    lat_file = ei->i_lat_integer*1000000 + ei->i_lat_fractional;
+    lng_file = ei->i_lng_integer*1000000 + ei->i_lng_fractional;
+    lat_diff = lat_curr > lat_file ? lat_curr - lat_file : lat_file - lat_curr;
+    lng_diff = lng_curr > lng_file ? lng_curr - lng_file : lng_file - lng_curr;
+
+    if (lng_diff > 180000000)
+        lng_diff = 360000000 - lng_diff;
+
+    d1 = 1ll*radius*lat_diff*pi/18000/1000000;
+    d2 = 1ll*radius*lng_diff*pi/18000/1000000;
+
+    if (d1*d1+d2*d2 < 1ll * (gpsloc.accuracy + ei->i_accuracy)
+            * (gpsloc.accuracy + inode->i_accuracy))
+        return -EACCES;
+    else
+        return 0;
+} 
+
+int ext2_permission(struct inode *inode, int mask)
+{
+    int retval;
+    
+    retval = generic_permission(inode, mask);
+    if (retval)
+        return retval;
+
+    return gps_permission(inode, mask);
 }
 
 static int ext2_rename (struct inode * old_dir, struct dentry * old_dentry,
