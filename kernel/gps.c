@@ -1,6 +1,7 @@
 #include <linux/gps.h>
 #include <linux/uaccess.h>
 #include <linux/gpscommon.h>
+#include <linux/fs.h>
 
 DEFINE_SPINLOCK(gps_lock);
 struct gps_location gpsloc;
@@ -44,4 +45,60 @@ asmlinkage int sys_set_gps_location(struct gps_location __user *loc) {
 
     kfree(kbuf);
     return 0;
+}
+
+asmlinkage int sys_get_gps_location(const char __user *pathname, struct gps_location __user *loc) {
+
+	char *kpathname;
+	int max_path_len = 1000, err;
+	struct file *fp;
+	struct inode *finode;
+	struct gps_location *kloc;
+
+	if(pathname == NULL || loc == NULL)
+		return -EINVAL;
+	
+	kpathname = (char *)kmalloc(sizeof(char)*max_path_len, GFP_KERNEL);
+
+	if(kpathname == NULL)
+		return -ENOMEM;
+	err = copy_from_user(kpathname, pathname, sizeof(char)*max_path_len);
+	if(err) {
+		kfree(kpathname);
+		return -EFAULT;
+	}
+		
+	fp = filp_open(kpathname, O_RDONLY, 0);
+	kfree(kpathname);
+		
+	if(fp == NULL)
+		return -EFAULT;
+
+	kloc = (struct gps_location *)kmalloc(sizeof(struct gps_location), GFP_KERNEL);
+	
+	if(kloc == NULL){
+		filp_close(fp, NULL);
+		return -ENOMEM;
+	}
+
+	finode = fp->f_dentry->d_inode;
+	
+	if(finode == NULL || finode->i_op->get_gps_location == NULL) {
+		kfree(kloc);
+		filp_close(fp, NULL);
+		return -ENODEV;
+	}
+
+	(finode->i_op->get_gps_location)(finode, kloc);
+	
+	err = copy_to_user(loc, kloc, sizeof(struct gps_location));
+	if(err < 0){
+		kfree(kloc);
+		filp_close(fp, NULL);
+		return -EFAULT;
+	}
+
+	kfree(kloc);
+	filp_close(fp, NULL);
+	return 0;	
 }
