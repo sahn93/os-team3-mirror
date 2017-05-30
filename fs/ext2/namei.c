@@ -37,6 +37,7 @@
 #include "acl.h"
 #include "xip.h"
 #include <linux/gpscommon.h>
+#include <asm/div64.h>
 
 static inline int ext2_add_nondir(struct dentry *dentry, struct inode *inode)
 {
@@ -319,11 +320,16 @@ int gps_permission(struct inode *inode, int mask)
     if (lng_diff > 180000000)
         lng_diff = 360000000 - lng_diff;
 
-    d1 = 1ll*radius*lat_diff*pi/18000/1000000;
-    d2 = 1ll*radius*lng_diff*pi/18000/1000000;
+    d1 = 1ll*radius*lat_diff*pi;
+    do_div(d1, 18000);
+    do_div(d1, 1000000);
 
-    if (d1*d1+d2*d2 < 1ll * (gpsloc.accuracy + ei->i_accuracy)
-            * (gpsloc.accuracy + inode->i_accuracy))
+    d2 = 1ll*radius*lng_diff*pi;
+    do_div(d2, 18000);
+    do_div(d2, 1000000);  
+    
+    if (d1*d1+d2*d2 >= 1ll * (gpsloc.accuracy + ei->i_accuracy)
+            * (gpsloc.accuracy + ei->i_accuracy))
         return -EACCES;
     else
         return 0;
