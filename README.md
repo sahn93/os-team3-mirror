@@ -43,6 +43,8 @@ We added `set_gps_location` and `get_gps_location` interface in `include/linux/f
 
 ### 4. User-space testing for location information
 
+We modified `e2fsprogs/lib/ext2fs/ext2_fs.h` to support location information. 
+
 ### 5. Location-based file access
 
 
@@ -51,6 +53,19 @@ We added `set_gps_location` and `get_gps_location` interface in `include/linux/f
 ### 1. Determine when to call set_gps_location
 
 - We called `ext2_set_gps_location` in `__ext2_write_inode` function in `fs/ext2/inode.c` file if the `i_mtime` or `i_ctime` modified.
+
+### 2. Modify ext2 inode structure
+
+- We added below items in `struct ext2_inode` and `struct ext2_inode_large` in `e2fsprogs/lib/ext2fs/ext2_fs.h`
+- We built `proj4.fs` file and pushed it into ARTIK device.
+
+```c
+	__le32	i_lat_integer;
+	__le32	i_lat_fractional;
+	__le32	i_lng_integer;
+	__le32	i_lng_fractional;
+	__le32	i_accuracy;
+```
 
 ## How to build kernel & Test
 
