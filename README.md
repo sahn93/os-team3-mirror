@@ -40,6 +40,7 @@ We added `set_gps_location` and `get_gps_location` interface in `include/linux/f
 
 ### 3. Updating location information for files
 
+We made the file system to update regular files' location information when they are created or modified. We explained detail implementation below in Implementation.
 
 ### 4. User-space testing for location information
 
