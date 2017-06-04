@@ -86,4 +86,5 @@ We compared the distance between the current device and the file location with `
 
 ## What we have learned
 
+We learned how to modify the file system, how to use ext2 file system. Also, we experienced delay when we change ext2 inode structure. We learned how to use submodule in github while we use e2fsprogs. In addition, we experienced different aspect of our kernel when we execute `file_loc` at `sdb_shell` and shell connected by serial port.   
 
