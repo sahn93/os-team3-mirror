@@ -59,8 +59,6 @@ We compared the distance between the current device and the file location with `
 ### 2. Modify ext2 inode structure
 
 - We added below items in `struct ext2_inode` and `struct ext2_inode_large` in `e2fsprogs/lib/ext2fs/ext2_fs.h`
-- We built `proj4.fs` file and pushed it into ARTIK device.
-
 ```c
 	__le32	i_lat_integer;
 	__le32	i_lat_fractional;
@@ -68,6 +66,8 @@ We compared the distance between the current device and the file location with `
 	__le32	i_lng_fractional;
 	__le32	i_accuracy;
 ```
+- We also added each gps information in big endian notation in `struct ext2_inode_info`
+- We built `proj4.fs` file and pushed it into ARTIK device.
 
 ## How to build kernel & Test
 
@@ -76,9 +76,10 @@ We compared the distance between the current device and the file location with `
 2. Type `flash` to upload kernel to the ARTIK.
 
 ### Compile & push test code
-1. Type `arm-linux-gnueabi-gcc <source file> -o <output name>` to compile test code.
-2. Connect SDB by typing `direct_set_debug.sh --sdb-set` on Artik.
-3. Type `push <source> <destination>` to send a file to Artik.
+1. Type `make` to compile two test programs (`file_loc`, `gpsupdate`).
+2. If you want to compile individual program, just append its name after `make` (e.g. `make file_loc`, `make gpsupdate`).
+3. Connect SDB by typing `direct_set_debug.sh --sdb-set` on Artik.
+4. Type `push <source> <destination>` to send a file to Artik.
 
 ### Run the test
 
