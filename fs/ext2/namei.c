@@ -302,10 +302,14 @@ static int ext2_rmdir (struct inode * dir, struct dentry *dentry)
 int gps_permission(struct inode *inode, int mask)
 {
     struct ext2_inode_info *ei;
-    int lat_curr, lng_curr, lat_file, lng_file,  lat_diff, lng_diff;
+    int lat_curr, lng_curr, lat_file, lng_file, lat_diff, lng_diff;
+    int avg_lat_diff_in_deg;
+    int cos[10] = { 10000, 9848, 9397, 8660, 7660, 6428, 5000, 3420, 1736, 0 };
+    // store cos(0) to cos(90) * 10000
     long long d1, d2;
     const int radius = 6378000; // Meteric unit
     const int pi = 314;
+
     ei =  EXT2_I(inode);
 
     lat_curr = gpsloc.lat_integer*1000000 + gpsloc.lat_fractional;
@@ -318,11 +322,13 @@ int gps_permission(struct inode *inode, int mask)
     if (lng_diff > 180000000)
         lng_diff = 360000000 - lng_diff;
 
+    // Use equirectangular approximation.
     d1 = 1ll*radius*lat_diff*pi;
     do_div(d1, 18000);
     do_div(d1, 1000000);
 
-    d2 = 1ll*radius*lng_diff*pi;
+    avg_lat_diff_in_deg = lat_diff / 2000000;
+    d2 = 1ll*radius*lng_diff*pi*cos[avg_lat_diff_in_deg/10]*cos[avg_lat_diff_in_deg/10];
     do_div(d2, 18000);
     do_div(d2, 1000000);  
     
