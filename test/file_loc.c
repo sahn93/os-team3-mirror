@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
 				printf("No GPS coordinate embedded.\n");
 				break;
 			default:
+                printf("%d\n", errno);
 				printf("Unknown error.\n");
 
 		}
