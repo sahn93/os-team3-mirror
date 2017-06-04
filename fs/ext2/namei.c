@@ -319,6 +319,14 @@ int gps_permission(struct inode *inode, int mask)
     lat_diff = lat_curr > lat_file ? lat_curr - lat_file : lat_file - lat_curr;
     lng_diff = lng_curr > lng_file ? lng_curr - lng_file : lng_file - lng_curr;
 
+    // exactly same lat, lng --> same point.
+    if (lat_diff == 0 && lng_diff == 0)
+        return 0;
+    
+    // when both point has lat +-90, they are a same point.
+    if ((lat_curr == 90000000 || lat_curr == -90000000) && lat_diff == 0)
+        return 0;
+
     if (lng_diff > 180000000)
         lng_diff = 360000000 - lng_diff;
 
@@ -326,11 +334,14 @@ int gps_permission(struct inode *inode, int mask)
     d1 = 1ll*radius*lat_diff*pi;
     do_div(d1, 18000);
     do_div(d1, 1000000);
-
+    
     avg_lat_in_deg = (lat_curr + lat_file) / 2000000;
-    d2 = 1ll*radius*lng_diff*pi*cos[avg_lat_in_deg/10]*cos[avg_lat_in_deg/10];
+    if (avg_lat_in_deg < 0)
+        avg_lat_in_deg = -avg_lat_in_deg;
+    d2 = 1ll*radius*lng_diff;
     do_div(d2, 18000);
     do_div(d2, 1000000);  
+    d2 = d2*pi*cos[(avg_lat_in_deg+5)/10];
     
     if (d1*d1+d2*d2 >= 1ll * (gpsloc.accuracy + ei->i_accuracy)
             * (gpsloc.accuracy + ei->i_accuracy))
