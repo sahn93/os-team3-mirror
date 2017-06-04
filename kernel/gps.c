@@ -72,7 +72,7 @@ asmlinkage int sys_get_gps_location(const char __user *pathname, struct gps_loca
 	kfree(kpathname);
 		
 	if(IS_ERR(fp))
-		return -EFAULT;
+		return (int)PTR_ERR(fp);
 
 	kloc = (struct gps_location *)kmalloc(sizeof(struct gps_location), GFP_KERNEL);
 	
@@ -89,18 +89,6 @@ asmlinkage int sys_get_gps_location(const char __user *pathname, struct gps_loca
 		return -ENODEV;
 	}
 	
-	if(finode->i_op->permission == NULL) {
-		kfree(kloc);
-		filp_close(fp, NULL);
-		return -EFAULT;
-	}
-	
-	if((finode->i_op->permission)(finode, 0) != 0){
-		kfree(kloc);
-		filp_close(fp, NULL);
-		return -EACCES;
-	}
-
 	(finode->i_op->get_gps_location)(finode, kloc);
 	
 	err = copy_to_user(loc, kloc, sizeof(struct gps_location));
