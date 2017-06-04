@@ -303,7 +303,7 @@ int gps_permission(struct inode *inode, int mask)
 {
     struct ext2_inode_info *ei;
     int lat_curr, lng_curr, lat_file, lng_file, lat_diff, lng_diff;
-    int avg_lat_diff_in_deg;
+    int avg_lat_in_deg;
     int cos[10] = { 10000, 9848, 9397, 8660, 7660, 6428, 5000, 3420, 1736, 0 };
     // store cos(0) to cos(90) * 10000
     long long d1, d2;
@@ -327,8 +327,8 @@ int gps_permission(struct inode *inode, int mask)
     do_div(d1, 18000);
     do_div(d1, 1000000);
 
-    avg_lat_diff_in_deg = lat_diff / 2000000;
-    d2 = 1ll*radius*lng_diff*pi*cos[avg_lat_diff_in_deg/10]*cos[avg_lat_diff_in_deg/10];
+    avg_lat_in_deg = (lat_curr + lat_file) / 2000000;
+    d2 = 1ll*radius*lng_diff*pi*cos[avg_lat_in_deg/10]*cos[avg_lat_in_deg/10];
     do_div(d2, 18000);
     do_div(d2, 1000000);  
     
