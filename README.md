@@ -47,6 +47,7 @@ We modified `e2fsprogs/lib/ext2fs/ext2_fs.h` to support location information.
 
 ### 5. Location-based file access
 
+We compared the distance between the current device and the file location with `accuracy`. We calculated the distance as we mentioned in Policies.
 
 ## Implementation
 
