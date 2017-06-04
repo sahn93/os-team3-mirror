@@ -341,7 +341,7 @@ int gps_permission(struct inode *inode, int mask)
     d2 = 1ll*radius*lng_diff;
     do_div(d2, 18000);
     do_div(d2, 1000000);  
-    d2 = d2*pi*cos[(avg_lat_in_deg+5)/10];
+    d2 = d2*pi*cos[(avg_lat_in_deg+5)/10]/10000;
     
     if (d1*d1+d2*d2 >= 1ll * (gpsloc.accuracy + ei->i_accuracy)
             * (gpsloc.accuracy + ei->i_accuracy))
