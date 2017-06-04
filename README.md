@@ -13,6 +13,8 @@ and file accessing based on location.
 
 ### 1. Policy that determines when to call set_gps_location
 
+- We called `ext2_set_gps_location` in `__ext2_write_inode` function in `fs/ext2/inode.c` file if the `i_mtime` or `i_ctime` modified.
+
 ### 2. Policy about distance calculation
 
 Due to the fact that kernel does not support any floating point operations, we had to make several assumptions.
@@ -24,6 +26,11 @@ Due to the fact that kernel does not support any floating point operations, we h
 - We checked if two points has exactly same coordinates and returns `0` in that case.
 - We also considered the case when both points has +-90 degree as their latitude. We did not check longitude in this case and returns `0`.
 - Yet, we considered about the range of `long long`, sign and endian matters as well. 
+
+### 3. Error check in get_gps_location
+
+- We assumed the maximum path length as `200` and returned `-1` if the path length is longer than `200`.
+- We returned `EINVAL`, `EACCES`, `ENODEV` properly.
 
 ## High-level design
 
@@ -40,7 +47,7 @@ We added `set_gps_location` and `get_gps_location` interface in `include/linux/f
 
 ### 4. User-space testing for location information
 
-
+### 5. Location-based file access
 
 
 ## Implementation
