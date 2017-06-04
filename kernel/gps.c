@@ -4,7 +4,13 @@
 #include <linux/fs.h>
 
 DEFINE_SPINLOCK(gps_lock);
-struct gps_location gpsloc;
+struct gps_location gpsloc = {
+    .lat_integer    = 0,
+    .lat_fractional = 0,
+    .lng_integer    = 0,
+    .lng_fractional = 0,
+    .accuracy       = 0,
+};
 
 asmlinkage int sys_set_gps_location(struct gps_location __user *loc) {
     
@@ -65,14 +71,17 @@ asmlinkage int sys_get_gps_location(const char __user *pathname, struct gps_loca
 	err = copy_from_user(kpathname, pathname, sizeof(char)*max_path_len);
 	if(err) {
 		kfree(kpathname);
+        printk(KERN_ALERT "copy from user err");
 		return -EFAULT;
 	}
 		
 	fp = filp_open(kpathname, O_RDONLY, 0);
 	kfree(kpathname);
 		
-	if(IS_ERR(fp))
+	if(IS_ERR(fp)) {
+        printk(KERN_ALERT "PTR_ERR(fp): %d\n", (int)PTR_ERR(fp));
 		return (int)PTR_ERR(fp);
+    }
 
 	kloc = (struct gps_location *)kmalloc(sizeof(struct gps_location), GFP_KERNEL);
 	
@@ -95,6 +104,7 @@ asmlinkage int sys_get_gps_location(const char __user *pathname, struct gps_loca
 	if(err < 0){
 		kfree(kloc);
 		filp_close(fp, NULL);
+        printk(KERN_ALERT "copy to user err");
 		return -EFAULT;
 	}
 
