@@ -28,6 +28,9 @@ Due to the fact that kernel does not support any floating point operations, we h
 - We assumed the maximum path length as `200` and returned `-1` if the path length is longer than `200`.
 - We returned `EINVAL`, `EACCES`, `ENODEV` properly.
 
+### 3. Initial GPS value
+- We statically initialized every GPS-related variables to 0.
+
 ## High-level design
 
 ### 1. Tracking device location
