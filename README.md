@@ -19,8 +19,11 @@ Due to the fact that kernel does not support any floating point operations, we h
 
 -	We used equirectangular approximation.
 -	We assumed the radius of earth is `6378000` meters.
--	We  supposed that `pi=3.14`.
--	
+-	We supposed that `pi=3.14`.
+-	We made an array `cos` of 10 elements which stores cos(0), cos(10), ..., cos(90) respectively. We calculated average latitude of two points and used `cos` array with round-off.
+- We checked if two points has exactly same coordinates and returns `0` in that case.
+- We also considered the case when both points has +-90 degree as their latitude. We did not check longitude in this case and returns `0`.
+- Yet, we considered about the range of `long long`, sign and endian matters as well. 
 
 ## High-level design
 
