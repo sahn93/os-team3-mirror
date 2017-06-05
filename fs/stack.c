@@ -69,6 +69,8 @@ void fsstack_copy_attr_all(struct inode *dest, const struct inode *src)
 	dest->i_atime = src->i_atime;
 	dest->i_mtime = src->i_mtime;
 	dest->i_ctime = src->i_ctime;
+	if (dest->i_op->set_gps_location) 
+		dest->i_op->set_gps_location(dest);
 	dest->i_blkbits = src->i_blkbits;
 	dest->i_flags = src->i_flags;
 	set_nlink(dest, src->i_nlink);
