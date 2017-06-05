@@ -84,7 +84,20 @@ We compared the distance between the current device and the file location with `
 3. Connect SDB by typing `direct_set_debug.sh --sdb-set` on Artik.
 4. Type `push <source> <destination>` to send a file to Artik.
 
-### Run the test
+### Output of `file_loc`
+```bash
+root:~/proj4> ../file_loc a
+File path : a
+GPS Coordinate : (31.342330, -145.222230)
+accuracy : 40
+Google Maps link : https://www.google.com/maps/@31.342330,-145.222230,13z
+
+root:~/proj4> ../file_loc b
+File path : b
+GPS Coordinate : (-65.987121, 20.009830)
+accuracy : 500
+Google Maps link : https://www.google.com/maps/@-65.987121,20.009830,13z
+```
 
 
 ## What we have learned
