@@ -1217,6 +1217,8 @@ static int ext2_setsize(struct inode *inode, loff_t newsize)
 	__ext2_truncate_blocks(inode, newsize);
 
 	inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
+		if (inode->i_op->set_gps_location) 
+			inode->i_op->set_gps_location(inode);
 	if (inode_needs_sync(inode)) {
 		sync_mapping_buffers(inode->i_mapping);
 		sync_inode_metadata(inode, 1);
@@ -1450,13 +1452,9 @@ static int __ext2_write_inode(struct inode *inode, int do_sync)
 	struct ext2_inode * raw_inode = ext2_get_inode(sb, ino, &bh);
 	int n;
 	int err = 0;
-	__le32 prev_mtime, prev_ctime;
 
 	if (IS_ERR(raw_inode))
  		return -EIO;
-
-	prev_mtime = raw_inode->i_mtime;
-	prev_ctime = raw_inode->i_ctime;
 
 	/* For fields not not tracking in the in-memory inode,
 	 * initialise them to zero for new inodes. */
@@ -1490,9 +1488,6 @@ static int __ext2_write_inode(struct inode *inode, int do_sync)
 	raw_inode->i_atime = cpu_to_le32(inode->i_atime.tv_sec);
 	raw_inode->i_ctime = cpu_to_le32(inode->i_ctime.tv_sec);
 	raw_inode->i_mtime = cpu_to_le32(inode->i_mtime.tv_sec);
-
-	if (prev_mtime != raw_inode->i_mtime || prev_ctime != raw_inode->i_ctime)
-		ext2_set_gps_location(inode);
 
 	raw_inode->i_blocks = cpu_to_le32(inode->i_blocks);
 	raw_inode->i_dtime = cpu_to_le32(ei->i_dtime);

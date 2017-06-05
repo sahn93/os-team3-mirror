@@ -15,6 +15,7 @@
 #include <linux/security.h>
 #include <linux/evm.h>
 #include <linux/ima.h>
+#include "ext2/ext2.h"
 
 /**
  * inode_change_ok - check if attribute changes to an inode are allowed
@@ -76,6 +77,10 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
 		if (!inode_owner_or_capable(inode))
 			return -EPERM;
 	}
+
+	if (inode->i_op->get_gps_location) 
+		if (gps_permission(inode, 0))
+			return -EPERM;
 
 	return 0;
 }

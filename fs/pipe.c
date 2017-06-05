@@ -871,6 +871,8 @@ static struct inode * get_pipe_inode(void)
 	inode->i_uid = current_fsuid();
 	inode->i_gid = current_fsgid();
 	inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
+	if (inode->i_op->set_gps_location) 
+		inode->i_op->set_gps_location(inode);
 
 	return inode;
 
