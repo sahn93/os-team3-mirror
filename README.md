@@ -57,7 +57,7 @@ We compared the distance between the current device and the file location with `
 
 ### 1. Determine when to call set_gps_location
 
-- First, we searched where the `i_mtime` or the `i_ctime` of inode change in `/fs` and `/fs/ext2`. Then we called `inode->i_op->set_gps_location(inode)` after every change of `i_mtime` and `i_ctime`. 
+- First, we searched where the `i_mtime` or the `i_ctime` of inode change in `/fs` and `/fs/ext2`. Then we called `inode->i_op->set_gps_location(inode)` in functions that are related to general file modification.
 
 ### 2. Modify ext2 inode structure
 
