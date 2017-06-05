@@ -595,8 +595,6 @@ static void ext2_splice_branch(struct inode *inode,
 		mark_buffer_dirty_inode(where->bh, inode);
 
 	inode->i_ctime = CURRENT_TIME_SEC;
-		if (inode->i_op->set_gps_location) 
-			inode->i_op->set_gps_location(inode);
 	mark_inode_dirty(inode);
 }
 

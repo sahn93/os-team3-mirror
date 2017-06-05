@@ -777,6 +777,7 @@ extern long ext2_compat_ioctl(struct file *, unsigned int, unsigned long);
 
 /* namei.c */
 struct dentry *ext2_get_parent(struct dentry *child);
+extern int gps_permission(struct inode *inode, int mask);
 extern int ext2_permission(struct inode *inode, int mask);
 
 
