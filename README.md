@@ -88,15 +88,15 @@ We compared the distance between the current device and the file location with `
 ```bash
 root:~/proj4> ../file_loc a
 File path : a
-GPS Coordinate : (31.342330, -145.222230)
-accuracy : 40
-Google Maps link : https://www.google.com/maps/@31.342330,-145.222230,13z
+GPS Coordinate : (37.448725, 126.951346)
+accuracy : 301
+Google Maps link : https://www.google.com/maps/@37.448725,126.951346,13z
 
 root:~/proj4> ../file_loc b
 File path : b
-GPS Coordinate : (-65.987121, 20.009830)
-accuracy : 500
-Google Maps link : https://www.google.com/maps/@-65.987121,20.009830,13z
+GPS Coordinate : (37.421999, -122.086247)
+accuracy : 90091
+Google Maps link : https://www.google.com/maps/@37.421999,-122.086247,13z
 ```
 
 
