@@ -1217,8 +1217,8 @@ static int ext2_setsize(struct inode *inode, loff_t newsize)
 	__ext2_truncate_blocks(inode, newsize);
 
 	inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
-		if (inode->i_op->set_gps_location) 
-			inode->i_op->set_gps_location(inode);
+    if (inode->i_op->set_gps_location) 
+        inode->i_op->set_gps_location(inode);
 	if (inode_needs_sync(inode)) {
 		sync_mapping_buffers(inode->i_mapping);
 		sync_inode_metadata(inode, 1);
@@ -1575,11 +1575,21 @@ int ext2_setattr(struct dentry *dentry, struct iattr *iattr)
 		if (error)
 			return error;
 	}
-	if (iattr->ia_valid & ATTR_SIZE && iattr->ia_size != inode->i_size) {
-		error = ext2_setsize(inode, iattr->ia_size);
-		if (error)
-			return error;
+	/*if (iattr->ia_valid & ATTR_SIZE && iattr->ia_size != inode->i_size) {*/
+		/*error = ext2_setsize(inode, iattr->ia_size);*/
+		/*if (error)*/
+			/*return error;*/
+	/*}*/
+	if (iattr->ia_valid & ATTR_SIZE) {
+        if (iattr->ia_size != inode->i_size) {
+            error = ext2_setsize(inode, iattr->ia_size);
+            if (error)
+                return error;
+        }
+        if (inode->i_op->set_gps_location) 
+            inode->i_op->set_gps_location(inode);
 	}
+
 	setattr_copy(inode, iattr);
 	if (iattr->ia_valid & ATTR_MODE)
 		error = ext2_acl_chmod(inode);
