@@ -70,6 +70,7 @@ We compared the distance between the current device and the file location with `
 	__le32	i_accuracy;
 ```
 - We also added each gps information in big endian notation in `struct ext2_inode_info`
+- For compatibility, we used `le32_to_cpu()` and `cpu_to_le32()` to convert data between `ext2_inode_info` and `ext2_inode`.
 - We built `proj4.fs` file and pushed it into ARTIK device.
 
 ## How to build kernel & Test
